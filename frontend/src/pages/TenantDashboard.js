@@ -3,6 +3,7 @@ import { fetchMenu, placeOrder } from "../api/api";
 import MenuList from "../components/MenuList";
 import { useNotifications } from "../context/NotificationContext";
 import { io } from "socket.io-client";
+import ChatWindow from "../components/ChatWindow";
 
 // TEMP: mock tenant from Registration module (replace with real auth/user context)
 const mockTenant = {
@@ -100,6 +101,12 @@ export default function TenantDashboard() {
           </div>
         </div>
       )}
+
+      {/* Added Chat Window */}
+      <div style={{ marginTop: 24 }}>
+        <h3>Need help? Chat with supplier</h3>
+        <ChatWindow role="tenant" tenantId={mockTenant._id} displayName={mockTenant.name} />
+      </div>
     </div>
   );
 }
