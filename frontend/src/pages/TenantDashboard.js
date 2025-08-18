@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { fetchMenu, placeOrder } from "../api/api";
 import MenuList from "../components/MenuList";
 import { useNotifications } from "../context/NotificationContext";
+import { io } from "socket.io-client";
 
 // TEMP: mock tenant from Registration module (replace with real auth/user context)
 const mockTenant = {
@@ -18,7 +19,19 @@ export default function TenantDashboard() {
 
   useEffect(() => {
     fetchMenu().then(res => setMenu(res.data));
-  }, []);
+    
+    // Socket.IO connection for announcements
+    const socket = io("http://localhost:5000", { autoConnect: true });
+    // mock tenant join
+    socket.emit("join", { role: "tenant", tenantId: mockTenant._id });
+    const onAnn = (p) => push(`New announcement: ${p.title}`, "announcement");
+    socket.on("announcement:new", onAnn);
+    
+    return () => { 
+      socket.off("announcement:new", onAnn);
+      socket.disconnect(); 
+    };
+  }, [push]);
 
   const selectedMeals = useMemo(
     () => menu.filter(m => selected.includes(m._id)),
