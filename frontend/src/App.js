@@ -6,6 +6,7 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import OrderHistory from "./pages/OrderHistory";
 import NotificationBell from "./components/NotificationBell";
 import { NotificationProvider } from "./context/NotificationContext";
+import SupplierMenuPage from "./pages/SupplierMenuPage";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
           <Link to="/orders">Order History</Link>
           <Link to="/supplier">Supplier</Link>
           <Link to="/analytics">Analytics</Link>
+          <Link to="/supplier/menu">Supplier Menu</Link>
           <div style={{ marginLeft: "auto" }}>
             <NotificationBell />
           </div>
@@ -26,6 +28,7 @@ export default function App() {
             <Route path="/orders" element={<OrderHistory />} />
             <Route path="/supplier" element={<SupplierDashboard />} />
             <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/supplier/menu" element={<SupplierMenuPage />} />
           </Routes>
         </main>
       </BrowserRouter>
