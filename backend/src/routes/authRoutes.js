@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
+import { loginUser } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -95,5 +96,8 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// POST /api/auth/login
+router.post("/login", loginUser);
 
 export default router;

@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
   const {
@@ -114,5 +115,62 @@ export const registerUser = async (req, res) => {
     }
 
     res.status(500).json({ message: "Server error during registration" });
+  }
+};
+
+export const loginUser = async (req, res) => {
+  const { email, password, rememberMe } = req.body;
+
+  // Basic validation
+  if (!email || !password) {
+    return res.status(400).json({
+      message: "Please provide both email and password",
+    });
+  }
+
+  try {
+    // Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    // Create JWT token
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: rememberMe ? "7d" : "24h", // Longer expiry if remember me is checked
+      }
+    );
+
+    // Remove password from response
+    const userResponse = { ...user._doc };
+    delete userResponse.password;
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      user: userResponse,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      message: "Server error during login",
+    });
   }
 };

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { Mail, Lock, Eye, EyeOff, Home } from "lucide-react";
 
 function Login() {
@@ -9,6 +10,8 @@ function Login() {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -16,12 +19,42 @@ function Login() {
       ...loginData,
       [name]: type === "checkbox" ? checked : value,
     });
+    // Clear error when user types
+    if (error) setError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Logging in:", loginData);
-    // call backend API here
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        loginData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Login successful:", response.data);
+
+      // Store token in localStorage or cookies
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      // Redirect to dashboard or home page
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message || "Login failed. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -38,6 +71,12 @@ function Login() {
 
         {/* Login Form */}
         <div className="bg-white rounded-xl shadow-lg p-8">
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
             <div>
@@ -109,9 +148,10 @@ function Login() {
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200"
             >
-              Sign In
+              {isLoading ? "Signing in..." : "Sign In"}
             </button>
 
             {/* Register Link */}
