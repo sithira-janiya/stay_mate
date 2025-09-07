@@ -1,8 +1,12 @@
 import express from "express";
-import { createAnnouncement, listAnnouncements } from "../controllers/announcementController.js";
+import { createAnnouncement, getAnnouncements } from "../controllers/announcementController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
+
 const router = express.Router();
 
-router.post("/", createAnnouncement);
-router.get("/", listAnnouncements);
+router.post("/", authenticate, authorize("supplier", "admin"), createAnnouncement);
+router.get("/", getAnnouncements);
 
 export default router;
+
+

@@ -2,11 +2,26 @@ import Feedback from "../models/Feedback.js";
 
 export const addFeedback = async (req, res) => {
   try {
-    const { orderId, rating, comment } = req.body;
-    const sentiment = rating >= 4 ? "positive" : rating === 3 ? "neutral" : "negative";
-    const feedback = await Feedback.create({ order: orderId, rating, comment, sentiment });
+    const { order, supplier, rating, comment, sentiment } = req.body;
+    const feedback = await Feedback.create({
+      order,
+      tenant: req.user._id,
+      supplier,
+      rating,
+      comment,
+      sentiment
+    });
     res.status(201).json(feedback);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const getSupplierFeedback = async (req, res) => {
+  try {
+    const feedback = await Feedback.find({ supplier: req.user._id }).populate("tenant order");
+    res.json(feedback);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };

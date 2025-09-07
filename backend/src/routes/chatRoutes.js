@@ -1,7 +1,9 @@
 import express from "express";
-import { getTenantThread } from "../controllers/chatController.js";
+import { getMessages } from "../controllers/chatController.js";
+import { authenticate } from "../middleware/auth.js";
+
 const router = express.Router();
 
-router.get("/tenant/:tenantId", getTenantThread);
+router.get("/", authenticate, getMessages);
 
 export default router;

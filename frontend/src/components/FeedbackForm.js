@@ -1,6 +1,8 @@
+//frontend/src/components/FeedbackForm.js
+
 import React, { useState } from "react";
 import { addFeedback } from "../api/api";
-import { useNotifications } from "../context/NotificationContext";
+import { useNotifications } from "../contexts/NotificationContext";
 
 export default function FeedbackForm({ orderId, onSubmitted }) {
   const [rating, setRating] = useState(5);

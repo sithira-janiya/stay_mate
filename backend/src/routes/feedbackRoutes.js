@@ -1,9 +1,10 @@
-// feedbackRoutes.js
 import express from "express";
-import { addFeedback } from "../controllers/feedbackController.js";
+import { addFeedback, getSupplierFeedback } from "../controllers/feedbackController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post("/", addFeedback);  // Tenant submits feedback
+router.post("/", authenticate, authorize("tenant"), addFeedback);
+router.get("/", authenticate, authorize("supplier"), getSupplierFeedback);
 
 export default router;

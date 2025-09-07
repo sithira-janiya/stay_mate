@@ -1,37 +1,101 @@
+
+// src/App.js
 import React from "react";
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import TenantDashboard from "./pages/TenantDashboard";
-import SupplierDashboard from "./pages/SupplierDashboard";
-import AnalyticsPage from "./pages/AnalyticsPage";
-import OrderHistory from "./pages/OrderHistory";
-import NotificationBell from "./components/NotificationBell";
-import { NotificationProvider } from "./context/NotificationContext";
-import SupplierMenuPage from "./pages/SupplierMenuPage";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import Topbar from "./components/Layout/Topbar";
+import Sidebar from "./components/Layout/Sidebar";
+import RoleSwitcher from "./components/RoleSwitcher";
+
+/* Tenant pages */
+import TenantMenuPage from "./pages/Tenant/TenantMenuPage";
+import TenantDashboard from "./pages/Tenant/TenantDashboard";
+import TenantOrders from "./pages/Tenant/TenantOrders";
+import TenantExpenses from "./pages/Tenant/TenantExpenses";
+
+/* Supplier pages */
+import SupplierLogin from "./pages/Supplier/SupplierLogin";
+import SupplierDashboard from "./pages/Supplier/SupplierDashboard";
+import SupplierMenuPage from "./pages/Supplier/SupplierMenuPage";
+import SupplierAnalytics from "./pages/Supplier/SupplierAnalytics";
+
+function AppShell({ children, role = "tenant" }) {
+  return (
+    <div className="app-shell">
+      <Sidebar role={role} />
+      <div style={{ flex: 1 }}>
+        <div className="main">
+          <Topbar />
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   return (
-    <NotificationProvider>
-      <BrowserRouter>
-        <header style={{ display: "flex", gap: 16, alignItems: "center", padding: 12, borderBottom: "1px solid #eee" }}>
-          <Link to="/">Tenant</Link>
-          <Link to="/orders">Order History</Link>
-          <Link to="/supplier">Supplier</Link>
-          <Link to="/analytics">Analytics</Link>
-          <Link to="/supplier/menu">Supplier Menu</Link>
-          <div style={{ marginLeft: "auto" }}>
-            <NotificationBell />
-          </div>
-        </header>
-        <main style={{ padding: 16 }}>
+    <AuthProvider>
+      <NotificationProvider>
+        <Router>
           <Routes>
-            <Route path="/" element={<TenantDashboard />} />
-            <Route path="/orders" element={<OrderHistory />} />
-            <Route path="/supplier" element={<SupplierDashboard />} />
-            <Route path="/analytics" element={<AnalyticsPage />} />
-            <Route path="/supplier/menu" element={<SupplierMenuPage />} />
+            {/* Default route */}
+            <Route path="/" element={<Navigate to="/tenant/menu" replace />} />
+            
+            {/* Tenant Routes */}
+            <Route path="/tenant/menu" element={
+              <AppShell role="tenant">
+                <TenantMenuPage />
+              </AppShell>
+            } />
+            <Route path="/tenant/dashboard" element={
+              <AppShell role="tenant">
+                <TenantDashboard />
+              </AppShell>
+            } />
+            <Route path="/tenant/orders" element={
+              <AppShell role="tenant">
+                <TenantOrders />
+              </AppShell>
+            } />
+            <Route path="/tenant/expenses" element={
+              <AppShell role="tenant">
+                <TenantExpenses />
+              </AppShell>
+            } />
+
+            {/* Supplier Routes */}
+            <Route path="/supplier/login" element={<SupplierLogin />} />
+            <Route path="/supplier/dashboard" element={
+              <AppShell role="supplier">
+                <SupplierDashboard />
+              </AppShell>
+            } />
+            <Route path="/supplier/menu" element={
+              <AppShell role="supplier">
+                <SupplierMenuPage />
+              </AppShell>
+            } />
+            <Route path="/supplier/analytics" element={
+              <AppShell role="supplier">
+                <SupplierAnalytics />
+              </AppShell>
+            } />
+
+            {/* Catch all route */}
+            <Route path="*" element={
+              <div style={{ padding: 24 }}>
+                <h2>Page Not Found</h2>
+                <p>The page you're looking for doesn't exist.</p>
+              </div>
+            } />
           </Routes>
-        </main>
-      </BrowserRouter>
-    </NotificationProvider>
+        </Router>
+
+        {/* 👇 Add this to quickly switch between tenant/supplier for testing */}
+        <RoleSwitcher />
+      </NotificationProvider>
+    </AuthProvider>
   );
 }

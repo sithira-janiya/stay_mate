@@ -1,9 +1,24 @@
-// analyticsRoutes.js
+// backend/src/routes/analyticsRoutes.js
 import express from "express";
-import { getAnalytics } from "../controllers/analyticsController.js";
+import { getSupplierAnalytics, getMonthlyIncome } from "../controllers/analyticsController.js";
+import { authenticate, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getAnalytics);  // Admin views analytics
+// Supplier analytics
+router.get(
+  "/",
+  authenticate,
+  authorize("supplier", "admin"),
+  getSupplierAnalytics
+);
+
+// Supplier monthly income
+router.get(
+  "/income",
+  authenticate,
+  authorize("supplier", "admin"),
+  getMonthlyIncome
+);
 
 export default router;
