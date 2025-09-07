@@ -1,13 +1,20 @@
 import React from "react";
-import "./App.css";
-import Test from "./components/Test"; // ✅ no .jsx in import
-console.log(Test); 
+import { Routes, Route } from "react-router-dom";
+import "./css/App.css";
+import Dashboard from "./pages/Dashboard.jsx";
+import RoomDashboard from "./components/RoomDashboard/RoomDashboard.jsx";
+import PropertyManagement from "./pages/PropertyManagement.jsx";
+
 
 function App() {
   return (
     <div className="App">
-      <h1>Hello from App</h1>
-      <Test />   {/* ✅ capitalized */}
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/rooms" element={<RoomDashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/property" element={<PropertyManagement />} />
+      </Routes>
     </div>
   );
 }
