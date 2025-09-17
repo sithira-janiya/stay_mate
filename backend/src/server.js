@@ -9,6 +9,12 @@ import connectDB from "./config/db.js";
 // Import routes
 import roomRoutes from './routes/roomRoutes.js';
 import propertyRoutes from './routes/propertyRoutes.js';
+import rentRoutes from "./routes/rentRoutes.js";
+import utilityRoutes from "./routes/utilityRoutes.js";
+
+
+
+
 
 
 dotenv.config();
@@ -27,6 +33,11 @@ const io = new Server(httpServer, {
 app.use(cors());
 app.use(express.json());
 
+// --- health check (this is what your browser is hitting) ---
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString() });
+});
+
 // Connect to MongoDB
 connectDB();
 
@@ -36,6 +47,8 @@ app.set('io', io);
 // Use routes
 app.use('/api/rooms', roomRoutes);
 app.use('/api/properties', propertyRoutes);
+app.use("/api/owner/rent", rentRoutes);
+app.use("/api/owner/utilities", utilityRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
