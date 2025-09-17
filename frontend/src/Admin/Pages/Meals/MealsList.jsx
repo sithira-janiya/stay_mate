@@ -11,8 +11,7 @@ import Modal from '../../../Components/Common/Modal';
 // Base API URL
 const API_URL = 'http://localhost:5000/api';
 
-// Pass userRole prop to control permissions
-const MealsList = ({ userRole = "admin" }) => {
+const MealsList = () => {
   // Original state variables remain unchanged
   const [meals, setMeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -374,14 +373,6 @@ const MealsList = ({ userRole = "admin" }) => {
     return <div className="flex">{stars}</div>;
   };
 
-  // Define permissions based on userRole
-  const permissions = {
-    canCreate: userRole === "supplier",
-    canUpdate: userRole === "supplier",
-    canDelete: true, // Both admin and supplier can delete
-    canViewFeedback: true // Both can view feedback
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -389,16 +380,12 @@ const MealsList = ({ userRole = "admin" }) => {
           <FaUtensils className="mr-3 text-amber-500" />
           Meal Management
         </h1>
-        
-        {/* Only show Add button for suppliers */}
-        {permissions.canCreate && (
-          <button
-            onClick={openAddModal}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md flex items-center transition-colors"
-          >
-            <FaPlus className="mr-2" /> Add New Meal
-          </button>
-        )}
+        <button
+          onClick={openAddModal}
+          className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md flex items-center transition-colors"
+        >
+          <FaPlus className="mr-2" /> Add New Meal
+        </button>
       </div>
 
       {error && (
@@ -550,7 +537,7 @@ const MealsList = ({ userRole = "admin" }) => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {meal.ratingCount > 0 && permissions.canViewFeedback && (
+                        {meal.ratingCount > 0 && (
                           <button
                             onClick={() => viewAllFeedback(meal)}
                             className="text-blue-400 hover:text-blue-300 mr-3"
@@ -558,24 +545,18 @@ const MealsList = ({ userRole = "admin" }) => {
                             <FaComment />
                           </button>
                         )}
-                        
-                        {permissions.canUpdate && (
-                          <button
-                            onClick={() => openEditModal(meal)}
-                            className="text-amber-400 hover:text-amber-300 mr-3"
-                          >
-                            <FaEdit />
-                          </button>
-                        )}
-                        
-                        {permissions.canDelete && (
-                          <button
-                            onClick={() => openDeleteModal(meal)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            <FaTrash />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => openEditModal(meal)}
+                          className="text-amber-400 hover:text-amber-300 mr-3"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => openDeleteModal(meal)}
+                          className="text-red-400 hover:text-red-300"
+                        >
+                          <FaTrash />
+                        </button>
                       </td>
                     </tr>
                     
@@ -638,218 +619,216 @@ const MealsList = ({ userRole = "admin" }) => {
       </div>
 
       {/* Add/Edit Meal Modal (shared form) */}
-      {permissions.canCreate && (
-        <Modal
-          isOpen={showAddModal || showEditModal}
-          onClose={() => showAddModal ? setShowAddModal(false) : setShowEditModal(false)}
-          title={showAddModal ? "Add New Meal" : "Edit Meal"}
-          size="lg"
-        >
-          <form onSubmit={showAddModal ? addMeal : updateMeal} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Meal Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  onKeyDown={e => /[^a-zA-Z\s]/.test(e.key) && e.preventDefault()}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
-                  Meal Type
-                </label>
-                <select
-                  name="mealType"
-                  value={formData.mealType}
-                  onChange={handleInputChange}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
-                  required
-                >
-                  <option value="BREAKFAST">Breakfast</option>
-                  <option value="LUNCH">Lunch</option>
-                  <option value="DINNER">Dinner</option>
-                  <option value="DESSERT">Dessert</option>
-                </select>
-              </div>
-            </div>
-            
+      <Modal
+        isOpen={showAddModal || showEditModal}
+        onClose={() => showAddModal ? setShowAddModal(false) : setShowEditModal(false)}
+        title={showAddModal ? "Add New Meal" : "Edit Meal"}
+        size="lg"
+      >
+        <form onSubmit={showAddModal ? addMeal : updateMeal} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-1">
-                Description
+                Meal Name
               </label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows="3"
-                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
-              />
-            </div>
-            
-            {/* Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">
-                Meal Image
-              </label>
-              <div className="flex items-center space-x-4">
-                <div className="w-24 h-24 border border-dashed border-gray-600 rounded-md overflow-hidden flex items-center justify-center relative">
-                  {imagePreview ? (
-                    <>
-                      <img src={imagePreview} alt="Meal preview" className="w-full h-full object-cover" />
-                      <button 
-                        type="button"
-                        onClick={removeImage}
-                        className="absolute top-1 right-1 bg-red-500 rounded-full p-1"
-                        title="Remove image"
-                      >
-                        <FaTimes className="text-white text-xs" />
-                      </button>
-                    </>
-                  ) : (
-                    <FaImage className="text-gray-500 text-2xl" />
-                  )}
-                </div>
-                
-                <div className="flex-grow">
-                  <input
-                    type="file"
-                    id="mealImage"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="mealImage"
-                    className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded-md inline-block"
-                  >
-                    Choose Image
-                  </label>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Max size: 1MB. Recommended: 400x400px
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Size & Price Table */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-sm font-medium text-gray-400">
-                  Size & Pricing
-                </label>
-                <button 
-                  type="button"
-                  onClick={() => setShowSizeTable(!showSizeTable)}
-                  className="text-xs text-amber-500 hover:text-amber-400"
-                >
-                  {showSizeTable ? 'Hide' : 'Show'} Options
-                </button>
-              </div>
-              
-              {showSizeTable && (
-                <div className="bg-gray-750 border border-gray-700 rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-700">
-                    <thead>
-                      <tr className="bg-gray-700">
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Size</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Price ($)</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Default</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-700">
-                      {['SMALL', 'MEDIUM', 'LARGE'].map(size => {
-                        const sizePrice = formData.sizePrices.find(sp => sp.size === size);
-                        return (
-                          <tr key={size}>
-                            <td className="px-4 py-3 text-sm text-white">{size}</td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="number"
-                                value={(sizePrice?.priceCents || 0) / 100}
-                                onChange={(e) => handleSizePriceChange(size, e.target.value)}
-                                step="0.01"
-                                min="0"
-                                className="w-20 bg-gray-700 border border-gray-600 rounded-md py-1 px-2 text-white text-sm focus:border-amber-500 focus:outline-none"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="radio"
-                                name="defaultSize"
-                                value={size}
-                                checked={formData.defaultSize === size}
-                                onChange={handleInputChange}
-                                className="h-4 w-4 text-amber-500 focus:ring-amber-400 border-gray-600 rounded"
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div className="px-4 py-2 bg-gray-700 text-xs text-gray-400">
-                    * Set price to 0 for unavailable sizes
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex items-center">
               <input
-                type="checkbox"
-                name="isActive"
-                checked={formData.isActive}
+                type="text"
+                name="name"
+                value={formData.name}
                 onChange={handleInputChange}
-                className="h-4 w-4 text-amber-500 focus:ring-amber-400 border-gray-600 rounded"
+                onKeyDown={e => /[^a-zA-Z\s]/.test(e.key) && e.preventDefault()}
+                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
+                required
               />
-              <label className="ml-2 block text-sm text-gray-400">
-                Active (available for ordering)
-              </label>
             </div>
             
-            {error && (
-              <div className="bg-red-900/30 border-l-4 border-red-500 p-3 rounded">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-            
-            <div className="flex justify-end space-x-3 pt-2">
-              <button
-                type="button"
-                onClick={() => showAddModal ? setShowAddModal(false) : setShowEditModal(false)}
-                className="px-4 py-2 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-1">
+                Meal Type
+              </label>
+              <select
+                name="mealType"
+                value={formData.mealType}
+                onChange={handleInputChange}
+                className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
+                required
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 flex items-center"
-                disabled={loading}
-              >
-                {loading ? (
+                <option value="BREAKFAST">Breakfast</option>
+                <option value="LUNCH">Lunch</option>
+                <option value="DINNER">Dinner</option>
+                <option value="DESSERT">Dessert</option>
+              </select>
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Description
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows="3"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+          
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-400 mb-1">
+              Meal Image
+            </label>
+            <div className="flex items-center space-x-4">
+              <div className="w-24 h-24 border border-dashed border-gray-600 rounded-md overflow-hidden flex items-center justify-center relative">
+                {imagePreview ? (
                   <>
-                    <FaSpinner className="animate-spin mr-2" />
-                    {showAddModal ? 'Adding...' : 'Updating...'}
+                    <img src={imagePreview} alt="Meal preview" className="w-full h-full object-cover" />
+                    <button 
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-1 right-1 bg-red-500 rounded-full p-1"
+                      title="Remove image"
+                    >
+                      <FaTimes className="text-white text-xs" />
+                    </button>
                   </>
                 ) : (
-                  <>
-                    {showAddModal ? <FaPlus className="mr-2" /> : <FaEdit className="mr-2" />}
-                    {showAddModal ? 'Add Meal' : 'Update Meal'}
-                  </>
+                  <FaImage className="text-gray-500 text-2xl" />
                 )}
+              </div>
+              
+              <div className="flex-grow">
+                <input
+                  type="file"
+                  id="mealImage"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="mealImage"
+                  className="cursor-pointer bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded-md inline-block"
+                >
+                  Choose Image
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Max size: 1MB. Recommended: 400x400px
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Size & Price Table */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-400">
+                Size & Pricing
+              </label>
+              <button 
+                type="button"
+                onClick={() => setShowSizeTable(!showSizeTable)}
+                className="text-xs text-amber-500 hover:text-amber-400"
+              >
+                {showSizeTable ? 'Hide' : 'Show'} Options
               </button>
             </div>
-          </form>
-        </Modal>
-      )}
+            
+            {showSizeTable && (
+              <div className="bg-gray-750 border border-gray-700 rounded-md overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-700">
+                  <thead>
+                    <tr className="bg-gray-700">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Size</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Price ($)</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-400">Default</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-700">
+                    {['SMALL', 'MEDIUM', 'LARGE'].map(size => {
+                      const sizePrice = formData.sizePrices.find(sp => sp.size === size);
+                      return (
+                        <tr key={size}>
+                          <td className="px-4 py-3 text-sm text-white">{size}</td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="number"
+                              value={(sizePrice?.priceCents || 0) / 100}
+                              onChange={(e) => handleSizePriceChange(size, e.target.value)}
+                              step="0.01"
+                              min="0"
+                              className="w-20 bg-gray-700 border border-gray-600 rounded-md py-1 px-2 text-white text-sm focus:border-amber-500 focus:outline-none"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="radio"
+                              name="defaultSize"
+                              value={size}
+                              checked={formData.defaultSize === size}
+                              onChange={handleInputChange}
+                              className="h-4 w-4 text-amber-500 focus:ring-amber-400 border-gray-600 rounded"
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <div className="px-4 py-2 bg-gray-700 text-xs text-gray-400">
+                  * Set price to 0 for unavailable sizes
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="isActive"
+              checked={formData.isActive}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-amber-500 focus:ring-amber-400 border-gray-600 rounded"
+            />
+            <label className="ml-2 block text-sm text-gray-400">
+              Active (available for ordering)
+            </label>
+          </div>
+          
+          {error && (
+            <div className="bg-red-900/30 border-l-4 border-red-500 p-3 rounded">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
+          
+          <div className="flex justify-end space-x-3 pt-2">
+            <button
+              type="button"
+              onClick={() => showAddModal ? setShowAddModal(false) : setShowEditModal(false)}
+              className="px-4 py-2 bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-amber-500 text-white rounded-md hover:bg-amber-600 flex items-center"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <FaSpinner className="animate-spin mr-2" />
+                  {showAddModal ? 'Adding...' : 'Updating...'}
+                </>
+              ) : (
+                <>
+                  {showAddModal ? <FaPlus className="mr-2" /> : <FaEdit className="mr-2" />}
+                  {showAddModal ? 'Add Meal' : 'Update Meal'}
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <Modal
@@ -945,8 +924,3 @@ const MealsList = ({ userRole = "admin" }) => {
 };
 
 export default MealsList;
-
-{/* Meals List Section */}
-<div className="mt-12">
-  <MealsList userRole="admin" />
-</div>
