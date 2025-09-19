@@ -12,8 +12,10 @@ const router = express.Router();
 router.get("/bills", listUtilityBills);
 router.post("/bills", createUtilityBill);
 
-// Payments
-router.post("/pay", payUtilityBill);
+// Pay a specific bill
+router.post("/bills/:id/pay", payUtilityBill);
+
+// Payments listing
 router.get("/payments", listUtilityPayments);
 
 export default router;
