@@ -1,23 +1,22 @@
+// backend/src/controllers/rentController.js
 import mongoose from "mongoose";
 import RentInvoice from "../models/RentInvoice.js";
 import Payment from "../models/Payment.js";
 import { getNextCode } from "../models/codeHelper.js";
+import { isValidMonth, ensureObjectId } from "../utils/validators.js";
 
 
-// Loose models into the team's collections
-import { User, Room, Order, UtilitySetting } from "../models/ExternalModels.js";
-
-
+// Loose models that point to your team’s collections
+import { User, Room, Order /*, UtilitySetting (wire later) */ } from "../models/ExternalModels.js";
 
 // ---------- helpers ----------
 function monthToRange(yyyyMM) {
   const [y, m] = yyyyMM.split("-").map(Number);
   const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
-  const end = new Date(Date.UTC(y, m, 1, 0, 0, 0)); // exclusive
+  const end   = new Date(Date.UTC(y, m,     1, 0, 0, 0)); // exclusive
   return { start, end };
 }
-function isValidMonth(s) { return /^\d{4}-\d{2}$/.test(s); }
-function ensureObjectId(v) { try { return new mongoose.Types.ObjectId(v); } catch { return null; } }
+
 
 // ---------- list invoices ----------
 export async function listInvoices(req, res) {
@@ -43,7 +42,6 @@ export async function listPayments(req, res) {
   try {
     const { propertyId, tenantId, month } = req.query;
 
-    // First find invoices that match filters
     const invFilter = {};
     if (propertyId) invFilter.propertyId = ensureObjectId(propertyId) || propertyId;
     if (tenantId)   invFilter.tenantId   = ensureObjectId(tenantId)   || tenantId;
@@ -51,7 +49,8 @@ export async function listPayments(req, res) {
       if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
       invFilter.month = month;
     }
-    const invs = await RentInvoice.find(invFilter, { _id: 1 }).lean();
+
+    const invs   = await RentInvoice.find(invFilter, { _id: 1 }).lean();
     const invIds = invs.map(i => i._id);
     if (!invIds.length) return res.json([]);
 
@@ -71,105 +70,84 @@ export async function generateInvoices(req, res) {
   try {
     const { month, dueDate } = req.body || {};
     if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
-    if (!dueDate) return res.status(400).json({ message: "dueDate required" });
+    if (!dueDate)            return res.status(400).json({ message: "dueDate required" });
 
     const today = new Date();
-    const due = new Date(dueDate);
+    const due   = new Date(dueDate);
     if (due < new Date(today.toDateString())) {
       return res.status(400).json({ message: "dueDate cannot be in the past" });
     }
 
     const { start, end } = monthToRange(month);
 
-    // --- 1) Determine active tenants & their property/room + base rent ---
-    // 🔶 This section depends on how your team marks occupancy.
-    // Try #1: Room has tenant field(s): tenantId or occupantId
-    const occupiedRooms = await Room.find(
-      {
-        // If your schema has status/active, filter it here.
-        // Example: { isOccupied: true }
-      },
-      {
-        _id: 1,
-        propertyId: 1,       // 🔶 ensure your rooms have propertyId (ObjectId → properties)
-        tenantId: 1,         // 🔶 or 'occupantId' or an array 'tenants'
-        baseRent: 1          // 🔶 rename if your schema uses another field (e.g., 'rent')
-      }
+    // --- 1) Determine active occupants per room (one assignment per occupant) ---
+    const rooms = await Room.find(
+      { isActive: true },                    // adjust if your team uses a different flag
+      { _id: 1, propertyId: 1, occupants: 1, baseRent: 1 }
     ).lean();
 
-    // Build a list of tenant assignments we can invoice
     const assignments = [];
-    for (const r of occupiedRooms) {
-      // Try multiple fields for tenant id: tenantId / occupantId / tenants[0]
-      const tId = r.tenantId || r.occupantId || (Array.isArray(r.tenants) ? r.tenants[0] : null);
-      if (!tId) continue;
-
-      // 🔶 If base rent is stored elsewhere (e.g., on property/room type), adjust here.
-      const baseRent = Number(r.baseRent || 0);
-
-      assignments.push({
-        tenantId: tId,
-        propertyId: r.propertyId,
-        roomId: r._id,
-        baseRent
-      });
+    for (const r of rooms) {
+      const occ = Array.isArray(r.occupants) ? r.occupants : [];
+      for (const tId of occ) {
+        assignments.push({
+          tenantId: tId,              // ObjectId of user
+          propertyId: r.propertyId,   // ObjectId
+          roomId: r._id,              // ObjectId
+          baseRent: Number(r.baseRent || 0)
+        });
+      }
     }
 
     if (!assignments.length) {
-      return res.status(200).json({ createdCount: 0, invoices: [], message: "No occupied rooms found" });
+      return res.status(200).json({ createdCount: 0, invoices: [], message: "No occupants found in active rooms" });
     }
 
-    // Group tenants per property to compute utility share
-    const tenantsByProperty = new Map(); // propertyId -> Set(tenantId)
+    // Tenants per property (for utility sharing)
+    const tenantsByProperty = new Map(); // propertyId(string) -> Set of tenantId(string)
     for (const a of assignments) {
-      const key = String(a.propertyId);
-      if (!tenantsByProperty.has(key)) tenantsByProperty.set(key, new Set());
-      tenantsByProperty.get(key).add(String(a.tenantId));
+      const pKey = String(a.propertyId);
+      if (!tenantsByProperty.has(pKey)) tenantsByProperty.set(pKey, new Set());
+      tenantsByProperty.get(pKey).add(String(a.tenantId));
     }
 
-    // --- 2) Compute utilities per property for the month ---
-    // 🔶 If your team stores monthly totals differently, adapt this query.
-    // We'll assume utilitysettings has docs like { propertyId, month: "YYYY-MM", waterAmount, electricityAmount }
-    const utilities = await UtilitySetting.find({ month }).lean();
-    const utilMap = new Map(); // propertyId -> total amount for month
-    for (const u of utilities) {
-      const total = Number(u.waterAmount || 0) + Number(u.electricityAmount || 0);
-      utilMap.set(String(u.propertyId), total);
-    }
+    // --- 2) Utilities placeholder (0) — wire later to your real model ---
+    const utilMap = new Map(); // propertyId(string) -> monthly total number
+    // TODO: When your Utility model is ready, fill utilMap by property+month:
+    // const utils = await UtilitySetting.find({ month }).lean();
+    // for (const u of utils) {
+    //   const total = Number(u.waterAmount || 0) + Number(u.electricityAmount || 0);
+    //   utilMap.set(String(u.propertyId), total);
+    // }
 
-    // --- 3) Compute meal totals per tenant for the month ---
-    // 🔶 If meals are in 'meals' instead of 'orders', switch model at ExternalModels.js
-    // Assume orders have { tenantId, propertyId, createdAt, total } or {amount}
+    // --- 3) Meals per tenant for the month (orders.totalCents, grouped by userId) ---
+    // Assumes orders.userId is the User's Mongo _id as a string.
     const orders = await Order.aggregate([
       { $match: { createdAt: { $gte: start, $lt: end } } },
-      {
-        $group: {
-          _id: "$tenantId", // 🔶 adjust field to your tenant reference in orders
-          total: { $sum: { $toDouble: "$total" } } // 🔶 or "$amount"
-        }
-      }
+      { $group: { _id: "$userId", totalCents: { $sum: "$totalCents" } } }
     ]);
-    const mealsMap = new Map(); // tenantId -> total
-    for (const o of orders) mealsMap.set(String(o._id), Number(o.total || 0));
+    const mealsMap = new Map(); // tenantId(string) -> total rupees (number)
+    for (const o of orders) {
+      const rupees = Math.round(Number(o.totalCents || 0) / 100);
+      mealsMap.set(String(o._id), rupees);
+    }
 
-    // --- 4) Create invoices (skip if one already exists for tenant+month) ---
-    const results = [];
+    // --- 4) Create invoices (skip if already exists for tenant+month) ---
     let createdCount = 0;
+    const results = [];
 
     for (const a of assignments) {
-      const tIdStr = String(a.tenantId);
-      const pIdStr = String(a.propertyId);
+      const pKey = String(a.propertyId);
+      const tKey = String(a.tenantId);
 
-      // Find tenant count for this property for share calculation
-      const tenantCount = tenantsByProperty.get(pIdStr)?.size || 1;
-      const propertyTotalUtil = utilMap.get(pIdStr) || 0;
-      const utilityShare = tenantCount ? Math.round(propertyTotalUtil / tenantCount) : 0;
+      const propertyTotalUtil = utilMap.get(pKey) || 0;
+      const tenantCount       = tenantsByProperty.get(pKey)?.size || 1;
+      const utilityShare      = Math.round(propertyTotalUtil / tenantCount);
 
-      const mealCost = Math.round(mealsMap.get(tIdStr) || 0);
+      const mealCost = Math.round(mealsMap.get(tKey) || 0);
       const baseRent = Math.round(Number(a.baseRent || 0));
-      const total = baseRent + utilityShare + mealCost;
+      const total    = baseRent + utilityShare + mealCost;
 
-      // Upsert rule: one invoice per (tenantId, month)
       const existing = await RentInvoice.findOne({ tenantId: a.tenantId, month }).lean();
       if (existing) {
         results.push(existing);
@@ -190,6 +168,7 @@ export async function generateInvoices(req, res) {
         status: "pending",
         dueDate: due
       });
+
       results.push(newInv.toObject());
       createdCount++;
     }
