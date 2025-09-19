@@ -2,6 +2,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { HiOutlineCurrencyDollar } from "react-icons/hi";
 
+
 const tabLink = ({ to, label }) => (
   <NavLink
     to={to}
@@ -23,9 +24,9 @@ export default function Payments() {
 
       {/* sub nav */}
       <div className="tabs">
-        {tabLink({ to: "invoices", label: "Invoices" })}
-        {tabLink({ to: "generate", label: "Generate" })}
-        {tabLink({ to: "receipts", label: "Receipts" })}
+        {tabLink({ to: "invoices", label: "Rent Invoices" })}
+        {tabLink({ to: "generate", label: "Generate Rent Invoices" })}
+        {tabLink({ to: "receipts", label: "Rent Receipts" })}
       </div>
 
       {/* current tab content */}
@@ -33,3 +34,5 @@ export default function Payments() {
     </>
   );
 }
+
+
