@@ -1,93 +1,90 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+import { createServer } from "http";
+import { Server } from "socket.io";
 import Test from "./models/Test.js";
 import connectDB from "./config/db.js";
 
-// Import routes
-import roomRoutes from './routes/roomRoutes.js';
-import propertyRoutes from './routes/propertyRoutes.js';
+// routes
+import roomRoutes from "./routes/roomRoutes.js";
+import propertyRoutes from "./routes/propertyRoutes.js";
 import rentRoutes from "./routes/rentRoutes.js";
 import utilityRoutes from "./routes/utilityRoutes.js";
-
-
-
 
 dotenv.config();
 
 const app = express();
 
+// --- HTTP + Socket.IO
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST", "PUT", "DELETE"]
-  }
+    origin: process.env.FRONTEND_URL || "http://localhost:5173", // vite default
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  },
 });
 
-// Middleware
-app.use(cors());
+// middleware
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  })
+);
 app.use(express.json());
 
-// --- health check (this is what your browser is hitting) ---
-app.get('/api/health', (req, res) => {
+// health check
+app.get("/api/health", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// Connect to MongoDB
+// db
 connectDB();
 
-// Make io available to routes
-app.set('io', io);
+// make io available to routes if you need it
+app.set("io", io);
 
-// Use routes
-app.use('/api/rooms', roomRoutes);
-app.use('/api/properties', propertyRoutes);
+// route mounts
+app.use("/api/rooms", roomRoutes);
+app.use("/api/properties", propertyRoutes);
 app.use("/api/owner/rent", rentRoutes);
-app.use("/api/owner/utilities", utilityRoutes);
 
+// 👇 **changed to plural and no /owner** to match your frontend
+app.use("/api/utilities", utilityRoutes);
 
-
-// Socket.io connection handling
-io.on('connection', (socket) => {
-  console.log('Client connected for real-time room updates');
-  
-  socket.on('disconnect', () => {
-    console.log('Client disconnected');
-  });
+// socket.io
+io.on("connection", (socket) => {
+  console.log("Client connected for real-time updates");
+  socket.on("disconnect", () => console.log("Client disconnected"));
 });
 
-// Browser test route
-app.get("/", (req, res) => {
-  res.send("<h1>🔥 Its finally working yay! I am going to cry...</h1>");
+// simple root page
+app.get("/", (_req, res) => {
+  res.send("<h1>🔥 Backend is up!</h1>");
 });
 
-// GET all test data
-app.get("/api/test", async (req, res) => {
+// demo test routes
+app.get("/api/test", async (_req, res) => {
   try {
-    const allTests = await Test.find();
-    res.json(allTests);
+    const all = await Test.find();
+    res.json(all);
   } catch (err) {
     res.status(500).json({ message: "Error fetching test data", error: err.message });
   }
 });
 
-// POST test data
 app.post("/api/test", async (req, res) => {
   try {
     const { name, value } = req.body;
-    const newTest = new Test({ name, value });
-    await newTest.save();
-    res.status(201).json({ message: "Test data saved!", data: newTest });
+    const doc = await new Test({ name, value }).save();
+    res.status(201).json({ message: "Saved", data: doc });
   } catch (err) {
     res.status(500).json({ message: "Error saving test data", error: err.message });
   }
 });
 
-// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log('🚀 Server running at http://localhost:${PORT}');
+// 👇 start the *httpServer* so Socket.IO works too
+httpServer.listen(PORT, () => {
+  console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
