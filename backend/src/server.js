@@ -15,8 +15,6 @@ import utilityRoutes from "./routes/utilityRoutes.js";
 
 
 
-
-
 dotenv.config();
 
 const app = express();
@@ -49,6 +47,8 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/properties', propertyRoutes);
 app.use("/api/owner/rent", rentRoutes);
 app.use("/api/owner/utilities", utilityRoutes);
+
+
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
