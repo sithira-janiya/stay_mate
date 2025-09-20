@@ -9,8 +9,8 @@ import connectDB from "./config/db.js";
 // routes
 import roomRoutes from "./routes/roomRoutes.js";
 import propertyRoutes from "./routes/propertyRoutes.js";
-import rentRoutes from "./routes/rentRoutes.js";
-import utilityRoutes from "./routes/utilityRoutes.js";
+import rentRoutes from "./Finance/routes/rentRoutes.js";
+import utilityRoutes from "./Finance/routes/utilityRoutes.js";
 
 dotenv.config();
 
