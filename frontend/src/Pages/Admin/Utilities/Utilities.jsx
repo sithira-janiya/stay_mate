@@ -1,10 +1,8 @@
+// src/Pages/Admin/Utilities/Utilities.jsx
 import { NavLink, Outlet } from "react-router-dom";
 
 const Tab = ({ to, children }) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) => `tab ${isActive ? "tab-active" : ""}`}
-  >
+  <NavLink to={to} className={({ isActive }) => `tab ${isActive ? "tab-active" : ""}`}>
     {children}
   </NavLink>
 );

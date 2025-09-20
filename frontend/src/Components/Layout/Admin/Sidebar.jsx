@@ -27,6 +27,8 @@ const Sidebar = () => {
     { name: "Tenant Feedback",  icon: <FaComment />,        path: "/admin/feedback" },
     { name: "Meals",            icon: <FaUtensils />,       path: "/admin/meals" },
     { name: "Orders",           icon: <FaShoppingCart />,   path: "/admin/orders" },
+    { name: "Meal Payments", icon: <FaMoneyBillWave />,     path: "/admin/meal-payments" },
+
   ];
 
   return (
