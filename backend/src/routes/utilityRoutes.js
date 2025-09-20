@@ -1,18 +1,21 @@
 import express from "express";
-import { listBills, createBill, payBill, listPayments } from "../controllers/utilityController.js";
+import {
+  listUtilityBills,
+  createUtilityBill,
+  payUtilityBill,
+  listUtilityPayments,
+} from "../controllers/utilityController.js";
 
 const router = express.Router();
 
-// GET /api/owner/utilities/bills
-router.get("/bills", listBills);
+// Bills
+router.get("/bills", listUtilityBills);
+router.post("/bills", createUtilityBill);
 
-// POST /api/owner/utilities/bills
-router.post("/bills", createBill);
+// Pay a specific bill
+router.post("/bills/:id/pay", payUtilityBill);
 
-// POST /api/owner/utilities/pay
-router.post("/pay", payBill);
-
-// GET /api/owner/utilities/payments
-router.get("/payments", listPayments);
+// Payments listing
+router.get("/payments", listUtilityPayments);
 
 export default router;
