@@ -11,6 +11,7 @@ import roomRoutes from "./routes/roomRoutes.js";
 import propertyRoutes from "./routes/propertyRoutes.js";
 import rentRoutes from "./Finance/routes/rentRoutes.js";
 import utilityRoutes from "./Finance/routes/utilityRoutes.js";
+import mealRoutes from "./Finance/routes/mealRoutes.js";
 
 dotenv.config();
 
@@ -48,6 +49,8 @@ app.set("io", io);
 app.use("/api/rooms", roomRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/owner/rent", rentRoutes);
+app.use("/api/meal", mealRoutes);
+
 
 // 👇 **changed to plural and no /owner** to match your frontend
 app.use("/api/utilities", utilityRoutes);

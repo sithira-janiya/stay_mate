@@ -11,17 +11,23 @@ import AdminLayout from "./Components/Layout/Admin/AdminLayout";
 // Admin pages
 import Dashboard from "./Pages/Admin/Dashboard";
 
-// Payments (rent) module
-import Payments from "./Pages/Admin/Payments/Payments";
-import InvoicesTab from "./Pages/Admin/Payments/InvoicesTab";
-import GenerateTab from "./Pages/Admin/Payments/GenerateTab";
-import ReceiptsTab from "./Pages/Admin/Payments/ReceiptsTab";
+//Admin Payments (rent) module
+import Payments from "./Pages/Admin/Payments/RentPayments";
+import RentInvoicesTab from "./Pages/Admin/Payments/RentInvoicesTab";
+import RentGenerateTab from "./Pages/Admin/Payments/RentGenerateTab";
+import RentReceiptsTab from "./Pages/Admin/Payments/RentReceiptsTab";
 
-// 🔸 Utilities module (new 3-tab wrapper + tabs)
+//Admin Utilities module 
 import Utilities from "./Pages/Admin/Utilities/Utilities";
-import BillsTab from "./Pages/Admin/Utilities/BillsTab";
-import PaymentsTab from "./Pages/Admin/Utilities/PaymentsTab";
-import RecordsTab from "./Pages/Admin/Utilities/RecordsTab";
+import UtilityBillsTab from "./Pages/Admin/Utilities/UtilityBillsTab";
+import UtilityPaymentsTab from "./Pages/Admin/Utilities/UtilityPaymentsTab";
+import UtilityRecordsTab from "./Pages/Admin/Utilities/UtilityRecordsTab";
+
+//Admin MealPayments module
+import MealPayments from "./Pages/Admin/MealPayments/MealPayments";
+import MealInvoicesTab from "./Pages/Admin/MealPayments/MealInvoicesTab";
+import MealPayTab from "./Pages/Admin/MealPayments/MealPayTab";
+import MealReceiptsTab from "./Pages/Admin/MealPayments/MealReceiptsTab";
 
 export default function App() {
   return (
@@ -38,19 +44,28 @@ export default function App() {
             {/* Payments (rent) */}
             <Route path="payments" element={<Payments />}>
               <Route index element={<Navigate to="invoices" replace />} />
-              <Route path="invoices" element={<InvoicesTab />} />
-              <Route path="generate" element={<GenerateTab />} />
-              <Route path="receipts" element={<ReceiptsTab />} />
+              <Route path="invoices" element={<RentInvoicesTab />} />
+              <Route path="generate" element={<RentGenerateTab />} />
+              <Route path="receipts" element={<RentReceiptsTab />} />
             </Route>
 
             {/* Utilities */}
             <Route path="utilities" element={<Utilities />}>
               <Route index element={<Navigate to="bills" replace />} />
-              <Route path="bills" element={<BillsTab />} />
-              <Route path="payments" element={<PaymentsTab />} />
-              <Route path="records" element={<RecordsTab />} />
+              <Route path="bills" element={<UtilityBillsTab />} />
+              <Route path="payments" element={<UtilityPaymentsTab />} />
+              <Route path="records" element={<UtilityRecordsTab />} />
             </Route>
+          
+
+          <Route path="meal-payments" element={<MealPayments />}>
+            <Route index element={<Navigate to="invoices" replace />} />
+            <Route path="invoices" element={<MealInvoicesTab />} />
+            <Route path="pay" element={<MealPayTab />} />
+            <Route path="receipts" element={<MealReceiptsTab />} />
           </Route>
+        </Route>
+          
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
