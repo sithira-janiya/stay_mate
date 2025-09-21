@@ -1,3 +1,4 @@
+//server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -12,6 +13,8 @@ import propertyRoutes from "./routes/propertyRoutes.js";
 import rentRoutes from "./Finance/routes/rentRoutes.js";
 import utilityRoutes from "./Finance/routes/utilityRoutes.js";
 import mealRoutes from "./Finance/routes/mealRoutes.js";
+import financeReportRoutes from "./Finance/routes/financeReportRoutes.js";
+
 
 dotenv.config();
 
@@ -50,6 +53,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/owner/rent", rentRoutes);
 app.use("/api/meal", mealRoutes);
+app.use("/api/finance-reports", financeReportRoutes);
 
 
 // 👇 **changed to plural and no /owner** to match your frontend
