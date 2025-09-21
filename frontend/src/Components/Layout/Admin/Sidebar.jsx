@@ -3,8 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import {
   FaHome, FaBuilding, FaClipboardList, FaMoneyBillWave,
   FaArrowCircleLeft, FaArrowCircleRight, FaChartBar, FaSignOutAlt,
-  FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaUtensils,
-  FaShoppingCart, FaBolt // ⚡ for Utilities
+  FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaBolt, FaFileInvoiceDollar  // ⚡ for Utilities
 } from "react-icons/fa";
 
 const Sidebar = () => {
@@ -18,16 +17,14 @@ const Sidebar = () => {
     { name: "Dashboard",        icon: <FaChartBar />,       path: "/admin" },
     { name: "Properties",       icon: <FaBuilding />,       path: "/admin/properties" },
     { name: "Room Requests",    icon: <FaClipboardList />,  path: "/admin/requests/room" },
-
-    { name: "Payments",         icon: <FaMoneyBillWave />,  path: "/admin/payments" },
-    { name: "Utilities",        icon: <FaBolt />,           path: "/admin/utilities" }, // 👈 Added
     { name: "Transfer Requests",icon: <FaExchangeAlt />,    path: "/admin/requests/transfer" },
     { name: "Move-Out Requests",icon: <FaDoorOpen />,       path: "/admin/requests/moveout" },
     { name: "Attendance",       icon: <FaClock />,          path: "/admin/attendance" },
     { name: "Tenant Feedback",  icon: <FaComment />,        path: "/admin/feedback" },
-    { name: "Meals",            icon: <FaUtensils />,       path: "/admin/meals" },
-    { name: "Orders",           icon: <FaShoppingCart />,   path: "/admin/orders" },
-    { name: "Meal Payments", icon: <FaMoneyBillWave />,     path: "/admin/meal-payments" },
+    { name: "Rent Payments",    icon: <FaMoneyBillWave />,  path: "/admin/payments" },
+    { name: "Utility Payments", icon: <FaBolt />,           path: "/admin/utilities" }, 
+    { name: "Meal Payments",    icon: <FaMoneyBillWave />,  path: "/admin/meal-payments" },
+    { name: "Finance Reports",  icon: <FaFileInvoiceDollar />, path: "/admin/finance-reports" },
 
   ];
 

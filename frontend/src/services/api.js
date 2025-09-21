@@ -1,16 +1,17 @@
+// frontend/src/services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// ---------------- Base axios instance ----------------
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Create axios instance with base URL
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
 });
 
-// Add request interceptor for future auth token handling
+// Attach token if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -22,7 +23,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Property API calls
+// ---------------- Teammates' APIs ----------------
 export const propertyAPI = {
   getAllProperties: () => api.get('/properties'),
   getProperty: (id) => api.get(`/properties/${id}`),
@@ -33,7 +34,6 @@ export const propertyAPI = {
   getPropertyStats: (id) => api.get(`/properties/${id}/stats`),
 };
 
-// Room API calls
 export const roomAPI = {
   getAllRooms: (params) => api.get('/rooms', { params }),
   getRoom: (id) => api.get(`/rooms/${id}`),
@@ -47,5 +47,12 @@ export const roomAPI = {
   getUnassignedTenants: () => api.get('/rooms/allocation/unassigned'),
   smartAllocation: () => api.get('/rooms/allocation/smart'),
 };
+
+// ---------------- Your APIs (modular) ----------------
+export * as rentAPI from './rentApi';
+export * as utilityAPI from './utilityApi';
+export * as financeAPI from './financeApi';
+// add more if needed: 
+// export * as mealSupplierAPI from './mealSupplierApi';
 
 export default api;

@@ -29,6 +29,14 @@ import MealInvoicesTab from "./Pages/Admin/MealPayments/MealInvoicesTab";
 import MealPayTab from "./Pages/Admin/MealPayments/MealPayTab";
 import MealReceiptsTab from "./Pages/Admin/MealPayments/MealReceiptsTab";
 
+//Admin FinanceReports module
+import FinanceReports from "./Pages/Admin/FinanceReports/FinanceReports";
+import FinanceListTab from "./Pages/Admin/FinanceReports/FinanceListTab";
+import FinanceGenerateTab from "./Pages/Admin/FinanceReports/FinanceGenerateTab";
+import FinanceDetailTab from "./Pages/Admin/FinanceReports/FinanceDetailTab";
+
+
+
 export default function App() {
   return (
     <AuthProvider>
@@ -57,12 +65,20 @@ export default function App() {
               <Route path="records" element={<UtilityRecordsTab />} />
             </Route>
           
-
+            {/* Utility Payments*/}
           <Route path="meal-payments" element={<MealPayments />}>
             <Route index element={<Navigate to="invoices" replace />} />
             <Route path="invoices" element={<MealInvoicesTab />} />
             <Route path="pay" element={<MealPayTab />} />
             <Route path="receipts" element={<MealReceiptsTab />} />
+          </Route>
+          
+          {/* Finance Reports*/}
+          <Route path="finance-reports" element={<FinanceReports />}>
+            <Route index element={<Navigate to="list" replace />} />
+            <Route path="list" element={<FinanceListTab />} />
+            <Route path="generate" element={<FinanceGenerateTab />} />
+            <Route path=":id" element={<FinanceDetailTab />} />
           </Route>
         </Route>
           
