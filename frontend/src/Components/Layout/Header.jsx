@@ -67,7 +67,7 @@ const Header = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <span className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-600">
-                StayMate
+                BoardingHouse
               </span>
             </Link>
           </div>
@@ -159,6 +159,13 @@ const Header = () => {
                         Admin Dashboard
                       </Link>
                     )}
+                    <Link 
+                      to="/account/reset-password" 
+                      className="block px-4 py-2 text-sm hover:bg-gray-700"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      Reset Password
+                    </Link>
                     <hr className="border-gray-700 my-1" />
                     <button 
                       onClick={() => {
@@ -302,6 +309,13 @@ const Header = () => {
                         Admin Dashboard
                       </Link>
                     )}
+                    <Link 
+                      to="/account/reset-password" 
+                      className="block py-2 hover:text-amber-400"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Reset Password
+                    </Link>
                     <button 
                       onClick={() => {
                         handleLogout();

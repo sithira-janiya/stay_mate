@@ -322,7 +322,7 @@ const PropertyListingPage = () => {
                         <div className="flex justify-between items-center border-t border-gray-700 pt-4">
                           <div>
                             <p className="text-amber-400 font-bold">
-                              ₱{property.lowestPrice.toLocaleString()}
+                              LKR:{property.lowestPrice.toLocaleString()}
                               <span className="text-gray-400 text-xs font-normal"> / month</span>
                             </p>
                           </div>

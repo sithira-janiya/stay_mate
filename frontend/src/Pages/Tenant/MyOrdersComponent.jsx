@@ -33,7 +33,7 @@ const MyOrdersComponent = ({ user, room }) => {
         setLoading(true);
         // We're fetching by contact phone number since that's how the order system identifies users
         const contactPhone = user.phone || '';
-        const response = await axios.get(`${API_URL}/orders?contactPhone=${contactPhone}`);
+        const response = await axios.get(`${API_URL}/orders?userId=${user.id}`);
         setOrders(response.data.data.orders || []);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -53,7 +53,7 @@ const MyOrdersComponent = ({ user, room }) => {
 
   // Format price from cents to dollars
   const formatPrice = (cents) => {
-    return `$${(cents / 100).toFixed(2)}`;
+    return `LKR:${(cents / 100).toFixed(2)}`;
   };
 
   // Format date and time
@@ -224,9 +224,9 @@ const MyOrdersComponent = ({ user, room }) => {
                     {getStatusIcon(order.status)}
                   </div>
                   <div>
-                    <div className="text-white font-medium">
-                      Order #{order._id.substring(order._id.length - 6)}
-                    </div>
+                    <div className="text-sm text-gray-400">
+  Order {order.orderId || `#${order._id.substring(order._id.length - 6)}`}
+</div>
                     <div className="text-gray-400 text-sm">
                       {formatDate(order.createdAt)}
                     </div>

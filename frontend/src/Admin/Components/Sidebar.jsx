@@ -3,7 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   FaHome, FaBuilding, FaClipboardList, FaMoneyBillWave, 
   FaArrowCircleLeft, FaArrowCircleRight, FaChartBar, FaSignOutAlt, 
-  FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaBolt, FaFileInvoiceDollar
+  FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaUtensils, FaShoppingCart,
+  FaUsers
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -28,11 +29,9 @@ const Sidebar = () => {
     { name: 'Move-Out Requests', icon: <FaDoorOpen />, path: '/admin/requests/moveout' },
     { name: 'Attendance', icon: <FaClock />, path: '/admin/attendance' },
     { name: 'Tenant Feedback', icon: <FaComment />, path: '/admin/feedback' },
-    { name: "Rent Payments",    icon: <FaMoneyBillWave />,  path: "/admin/payments" },
-    { name: "Utility Payments", icon: <FaBolt />,           path: "/admin/utilities" }, 
-    { name: "Meal Payments",    icon: <FaMoneyBillWave />,  path: "/admin/meal-payments" },
-    { name: "Finance Reports",  icon: <FaFileInvoiceDollar />, path: "/admin/finance-reports" },
-    
+    { name: 'Meals', icon: <FaUtensils />, path: '/admin/meals' }, // Added Meals
+    { name: 'Orders', icon: <FaShoppingCart />, path: '/admin/orders' }, // Added Orders
+    { name: 'Users', icon: <FaUsers />, path: '/admin/users' } // Added Users
   ];
   
   return (
@@ -95,7 +94,7 @@ const Sidebar = () => {
           {isOpen && <span>Back to Site</span>}
         </Link>
         <Link 
-          to="/logout"
+          to="/login"
           className={`flex items-center p-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-colors mt-2`}
         >
           <span className={`${isOpen ? 'mr-3' : 'mx-auto'}`}>
