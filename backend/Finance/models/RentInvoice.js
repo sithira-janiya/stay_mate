@@ -1,5 +1,6 @@
+// backend/Finance/models/RentInvoice.js
 // 🔶 COLLECTION NAME: 'rentinvoices'
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const RentInvoiceSchema = new mongoose.Schema(
   {
@@ -29,4 +30,4 @@ const RentInvoiceSchema = new mongoose.Schema(
 // helpful compound index for filters
 RentInvoiceSchema.index({ month: 1, propertyId: 1, tenantId: 1 });
 
-export default mongoose.model("RentInvoice", RentInvoiceSchema);
+module.exports = mongoose.model("RentInvoice", RentInvoiceSchema);

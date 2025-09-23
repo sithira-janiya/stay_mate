@@ -1,30 +1,27 @@
-// backend/src/controllers/rentController.js
-import mongoose from "mongoose";
-import RentInvoice from "../models/RentInvoice.js";
-import Payment from "../models/Payment.js";
-import { getNextCode } from "../models/codeHelper.js";
-import { isValidMonth, ensureObjectId } from "../utils/validators.js";
+// backend/Finance/controllers/rentController.js
+const mongoose = require("mongoose");
+const RentInvoice = require("../models/RentInvoice");
+const Payment = require("../models/Payment");
+const { getNextCode } = require("../models/codeHelper");
+const { isValidMonth, ensureObjectId } = require("../utils/validators");
 
-
-// Loose models that point to your team’s collections
-import { User, Room, Order /*, UtilitySetting (wire later) */ } from "../models/ExternalModels.js";
+const { User, Room, Order /* , UtilitySetting */ } = require("../models/ExternalModels");
 
 // ---------- helpers ----------
 function monthToRange(yyyyMM) {
   const [y, m] = yyyyMM.split("-").map(Number);
   const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
-  const end   = new Date(Date.UTC(y, m,     1, 0, 0, 0)); // exclusive
+  const end = new Date(Date.UTC(y, m, 1, 0, 0, 0));
   return { start, end };
 }
 
-
 // ---------- list invoices ----------
-export async function listInvoices(req, res) {
+async function listInvoices(req, res) {
   try {
     const { propertyId, tenantId, month } = req.query;
     const filter = {};
     if (propertyId) filter.propertyId = ensureObjectId(propertyId) || propertyId;
-    if (tenantId)   filter.tenantId   = ensureObjectId(tenantId)   || tenantId;
+    if (tenantId) filter.tenantId = ensureObjectId(tenantId) || tenantId;
     if (month) {
       if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
       filter.month = month;
@@ -38,20 +35,19 @@ export async function listInvoices(req, res) {
 }
 
 // ---------- list payments ----------
-export async function listPayments(req, res) {
+async function listPayments(req, res) {
   try {
     const { propertyId, tenantId, month } = req.query;
-
     const invFilter = {};
     if (propertyId) invFilter.propertyId = ensureObjectId(propertyId) || propertyId;
-    if (tenantId)   invFilter.tenantId   = ensureObjectId(tenantId)   || tenantId;
+    if (tenantId) invFilter.tenantId = ensureObjectId(tenantId) || tenantId;
     if (month) {
       if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
       invFilter.month = month;
     }
 
-    const invs   = await RentInvoice.find(invFilter, { _id: 1 }).lean();
-    const invIds = invs.map(i => i._id);
+    const invs = await RentInvoice.find(invFilter, { _id: 1 }).lean();
+    const invIds = invs.map((i) => i._id);
     if (!invIds.length) return res.json([]);
 
     const pays = await Payment.find({ invoiceId: { $in: invIds } })
@@ -66,23 +62,21 @@ export async function listPayments(req, res) {
 }
 
 // ---------- generate invoices ----------
-export async function generateInvoices(req, res) {
+async function generateInvoices(req, res) {
   try {
     const { month, dueDate } = req.body || {};
     if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
-    if (!dueDate)            return res.status(400).json({ message: "dueDate required" });
+    if (!dueDate) return res.status(400).json({ message: "dueDate required" });
 
     const today = new Date();
-    const due   = new Date(dueDate);
+    const due = new Date(dueDate);
     if (due < new Date(today.toDateString())) {
       return res.status(400).json({ message: "dueDate cannot be in the past" });
     }
 
     const { start, end } = monthToRange(month);
-
-    // --- 1) Determine active occupants per room (one assignment per occupant) ---
     const rooms = await Room.find(
-      { isActive: true },                    // adjust if your team uses a different flag
+      { isActive: true },
       { _id: 1, propertyId: 1, occupants: 1, baseRent: 1 }
     ).lean();
 
@@ -91,48 +85,39 @@ export async function generateInvoices(req, res) {
       const occ = Array.isArray(r.occupants) ? r.occupants : [];
       for (const tId of occ) {
         assignments.push({
-          tenantId: tId,              // ObjectId of user
-          propertyId: r.propertyId,   // ObjectId
-          roomId: r._id,              // ObjectId
-          baseRent: Number(r.baseRent || 0)
+          tenantId: tId,
+          propertyId: r.propertyId,
+          roomId: r._id,
+          baseRent: Number(r.baseRent || 0),
         });
       }
     }
 
     if (!assignments.length) {
-      return res.status(200).json({ createdCount: 0, invoices: [], message: "No occupants found in active rooms" });
+      return res
+        .status(200)
+        .json({ createdCount: 0, invoices: [], message: "No occupants found in active rooms" });
     }
 
-    // Tenants per property (for utility sharing)
-    const tenantsByProperty = new Map(); // propertyId(string) -> Set of tenantId(string)
+    const tenantsByProperty = new Map();
     for (const a of assignments) {
       const pKey = String(a.propertyId);
       if (!tenantsByProperty.has(pKey)) tenantsByProperty.set(pKey, new Set());
       tenantsByProperty.get(pKey).add(String(a.tenantId));
     }
 
-    // --- 2) Utilities placeholder (0) — wire later to your real model ---
-    const utilMap = new Map(); // propertyId(string) -> monthly total number
-    // TODO: When your Utility model is ready, fill utilMap by property+month:
-    // const utils = await UtilitySetting.find({ month }).lean();
-    // for (const u of utils) {
-    //   const total = Number(u.waterAmount || 0) + Number(u.electricityAmount || 0);
-    //   utilMap.set(String(u.propertyId), total);
-    // }
-
-    // --- 3) Meals per tenant for the month (orders.totalCents, grouped by userId) ---
-    // Assumes orders.userId is the User's Mongo _id as a string.
+    const utilMap = new Map(); // TODO: connect Utility model later
     const orders = await Order.aggregate([
       { $match: { createdAt: { $gte: start, $lt: end } } },
-      { $group: { _id: "$userId", totalCents: { $sum: "$totalCents" } } }
+      { $group: { _id: "$userId", totalCents: { $sum: "$totalCents" } } },
     ]);
-    const mealsMap = new Map(); // tenantId(string) -> total rupees (number)
+
+    const mealsMap = new Map();
     for (const o of orders) {
       const rupees = Math.round(Number(o.totalCents || 0) / 100);
       mealsMap.set(String(o._id), rupees);
     }
 
-    // --- 4) Create invoices (skip if already exists for tenant+month) ---
     let createdCount = 0;
     const results = [];
 
@@ -141,12 +126,12 @@ export async function generateInvoices(req, res) {
       const tKey = String(a.tenantId);
 
       const propertyTotalUtil = utilMap.get(pKey) || 0;
-      const tenantCount       = tenantsByProperty.get(pKey)?.size || 1;
-      const utilityShare      = Math.round(propertyTotalUtil / tenantCount);
+      const tenantCount = tenantsByProperty.get(pKey)?.size || 1;
+      const utilityShare = Math.round(propertyTotalUtil / tenantCount);
 
       const mealCost = Math.round(mealsMap.get(tKey) || 0);
       const baseRent = Math.round(Number(a.baseRent || 0));
-      const total    = baseRent + utilityShare + mealCost;
+      const total = baseRent + utilityShare + mealCost;
 
       const existing = await RentInvoice.findOne({ tenantId: a.tenantId, month }).lean();
       if (existing) {
@@ -166,7 +151,7 @@ export async function generateInvoices(req, res) {
         mealCost,
         total,
         status: "pending",
-        dueDate: due
+        dueDate: due,
       });
 
       results.push(newInv.toObject());
@@ -180,12 +165,14 @@ export async function generateInvoices(req, res) {
   }
 }
 
-// ---------- create receipt (no partials) ----------
-export async function createReceipt(req, res) {
+// ---------- create receipt ----------
+async function createReceipt(req, res) {
   try {
     const { invoiceId, amountPaid, paymentMethod } = req.body || {};
     if (!invoiceId || amountPaid == null || !paymentMethod) {
-      return res.status(400).json({ message: "invoiceId, amountPaid, paymentMethod required" });
+      return res
+        .status(400)
+        .json({ message: "invoiceId, amountPaid, paymentMethod required" });
     }
 
     const inv = await RentInvoice.findById(invoiceId);
@@ -203,7 +190,7 @@ export async function createReceipt(req, res) {
       invoiceId: inv._id,
       amountPaid: amt,
       paymentMethod,
-      paymentDate: new Date()
+      paymentDate: new Date(),
     });
 
     inv.status = "paid";
@@ -215,3 +202,10 @@ export async function createReceipt(req, res) {
     return res.status(500).json({ message: "Failed to create receipt" });
   }
 }
+
+module.exports = {
+  listInvoices,
+  listPayments,
+  generateInvoices,
+  createReceipt,
+};

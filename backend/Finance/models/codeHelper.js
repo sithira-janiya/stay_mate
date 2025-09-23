@@ -1,11 +1,11 @@
-import Counter from "./Counter.js";
-
-export async function getNextCode(kind, defaultPrefix, defaultPad = 3) {
+// backend/Finance/models/codeHelper.js  
+const Counter = require("./Counter"); 
+async function getNextCode(kind, defaultPrefix, defaultPad = 3) {
   const doc = await Counter.findOneAndUpdate(
     { _id: kind },
     {
       $setOnInsert: { prefix: defaultPrefix, pad: defaultPad },
-      $inc: { seq: 1 }
+      $inc: { seq: 1 },
     },
     { new: true, upsert: true }
   ).lean();
@@ -15,3 +15,5 @@ export async function getNextCode(kind, defaultPrefix, defaultPad = 3) {
   const num = String(doc.seq).padStart(pad, "0");
   return `${prefix}${num}`;
 }
+
+module.exports = { getNextCode };

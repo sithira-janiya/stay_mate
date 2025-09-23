@@ -1,55 +1,96 @@
-// src/App.jsx
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./Context/AuthContext";
+// frontend/src/App.jsx
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './Context/AuthContext';
+import './App.css';
 
-// Public
-import HomePage from "./Pages/Home/HomePage";
+// Admin layout & pages
+import AdminLayout from './Admin/Components/AdminLayout';
+import Dashboard from './Admin/Pages/Dashboard';
+import PropertyList from './Admin/Pages/Properties/PropertyList';
+import RoomList from './Admin/Pages/Properties/RoomList';
+import RoomDetails from './Admin/Pages/Rooms/RoomDetails';
+import RoomRequestList from './Admin/Pages/Requests/RoomRequestList';
+import RoomRequestDetail from './Admin/Pages/Requests/RoomRequestDetail';
+import TransferRequestList from './Admin/Pages/Requests/TransferRequestList';
+import TransferRequestDetail from './Admin/Pages/Requests/TransferRequestDetail';
+import MoveOutRequestList from './Admin/Pages/Requests/MoveOutRequestList';
+import MoveOutRequestDetail from './Admin/Pages/Requests/MoveOutRequestDetail';
+import AttendanceDashboard from './Admin/Pages/Attendance/AttendanceDashboard';
+import UtilitySettingsPage from './Admin/Pages/Attendance/UtilitySettingsPage';
+import TenantAttendanceDetail from './Admin/Pages/Attendance/TenantAttendanceDetail';
 
-// Admin shell
-import AdminLayout from "./Components/Layout/Admin/AdminLayout";
+// Rent Payments (your module)
+import Payments from './Admin/Pages/Payments/RentPayments';
+import RentInvoicesTab from './Admin/Pages/Payments/RentInvoicesTab';
+import RentGenerateTab from './Admin/Pages/Payments/RentGenerateTab';
+import RentReceiptsTab from './Admin/Pages/Payments/RentReceiptsTab';
 
-// Admin pages
-import Dashboard from "./Pages/Admin/Dashboard";
+// Utilities (your module)
+import Utilities from './Admin/Pages/Utilities/Utilities';
+import UtilityBillsTab from './Admin/Pages/Utilities/UtilityBillsTab';
+import UtilityPaymentsTab from './Admin/Pages/Utilities/UtilityPaymentsTab';
+import UtilityRecordsTab from './Admin/Pages/Utilities/UtilityRecordsTab';
 
-//Admin Payments (rent) module
-import Payments from "./Pages/Admin/Payments/RentPayments";
-import RentInvoicesTab from "./Pages/Admin/Payments/RentInvoicesTab";
-import RentGenerateTab from "./Pages/Admin/Payments/RentGenerateTab";
-import RentReceiptsTab from "./Pages/Admin/Payments/RentReceiptsTab";
+// Meal Payments (your module)
+import MealPayments from './Admin/Pages/MealPayments/MealPayments';
+import MealInvoicesTab from './Admin/Pages/MealPayments/MealInvoicesTab';
+import MealPayTab from './Admin/Pages/MealPayments/MealPayTab';
+import MealReceiptsTab from './Admin/Pages/MealPayments/MealReceiptsTab';
 
-//Admin Utilities module 
-import Utilities from "./Pages/Admin/Utilities/Utilities";
-import UtilityBillsTab from "./Pages/Admin/Utilities/UtilityBillsTab";
-import UtilityPaymentsTab from "./Pages/Admin/Utilities/UtilityPaymentsTab";
-import UtilityRecordsTab from "./Pages/Admin/Utilities/UtilityRecordsTab";
+// Finance Reports (your module)
+import FinanceReports from './Admin/Pages/FinanceReports/FinanceReports';
+import FinanceListTab from './Admin/Pages/FinanceReports/FinanceListTab';
+import FinanceGenerateTab from './Admin/Pages/FinanceReports/FinanceGenerateTab';
+import FinanceDetailTab from './Admin/Pages/FinanceReports/FinanceDetailTab';
 
-//Admin MealPayments module
-import MealPayments from "./Pages/Admin/MealPayments/MealPayments";
-import MealInvoicesTab from "./Pages/Admin/MealPayments/MealInvoicesTab";
-import MealPayTab from "./Pages/Admin/MealPayments/MealPayTab";
-import MealReceiptsTab from "./Pages/Admin/MealPayments/MealReceiptsTab";
+// Public / tenant / supplier
+import HomePage from './Pages/Home/HomePage';
+import PropertyListingPage from './Pages/Properties/PropertyListingPage';
+import PropertyDetailPage from './Pages/Properties/PropertyDetailPage';
+import RoomListingPage from './Pages/Rooms/RoomListingPage';
+import RoomDetailPage from './Pages/Rooms/RoomDetailPage';
+import RoomRequestForm from './Pages/Rooms/RoomRequestForm';
+import MyRoomPage from './Pages/Tenant/MyRoomPage';
+import MealBrowsePage from './Pages/Tenant/MealBrowsePage';
+import MealCheckoutPage from './Pages/Tenant/MealCheckoutPage';
 
-//Admin FinanceReports module
-import FinanceReports from "./Pages/Admin/FinanceReports/FinanceReports";
-import FinanceListTab from "./Pages/Admin/FinanceReports/FinanceListTab";
-import FinanceGenerateTab from "./Pages/Admin/FinanceReports/FinanceGenerateTab";
-import FinanceDetailTab from "./Pages/Admin/FinanceReports/FinanceDetailTab";
+import FeedbackList from './Admin/Pages/Feedback/FeedbackList';
+import FeedbackDetail from './Admin/Pages/Feedback/FeedbackDetail';
+import FeedbackStatistics from './Admin/Pages/Feedback/FeedbackStatistics';
 
+import MealsList from './Admin/Pages/Meals/MealsList';
+import OrdersList from './Admin/Pages/Orders/OrdersList';
 
+import SupplierDashboard from './Supplier/Pages/Dashboard/SupplierDashboard';
 
-export default function App() {
+function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <Router>
         <Routes>
-          {/* Public */}
-          <Route path="/" element={<HomePage />} />
-
           {/* Admin area */}
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
 
-            {/* Payments (rent) */}
+            {/* Properties / Rooms */}
+            <Route path="properties" element={<PropertyList />} />
+            <Route path="properties/:propertyId/rooms" element={<RoomList />} />
+            <Route path="rooms/:roomId" element={<RoomDetails />} />
+
+            {/* Requests */}
+            <Route path="requests/room" element={<RoomRequestList />} />
+            <Route path="requests/room/:id" element={<RoomRequestDetail />} />
+            <Route path="requests/transfer" element={<TransferRequestList />} />
+            <Route path="requests/transfer/:id" element={<TransferRequestDetail />} />
+            <Route path="requests/moveout" element={<MoveOutRequestList />} />
+            <Route path="requests/moveout/:id" element={<MoveOutRequestDetail />} />
+
+            {/* Attendance */}
+            <Route path="attendance" element={<AttendanceDashboard />} />
+            <Route path="attendance/settings" element={<UtilitySettingsPage />} />
+            <Route path="attendance/:tenantId" element={<TenantAttendanceDetail />} />
+
+            {/* Rent Payments */}
             <Route path="payments" element={<Payments />}>
               <Route index element={<Navigate to="invoices" replace />} />
               <Route path="invoices" element={<RentInvoicesTab />} />
@@ -64,29 +105,53 @@ export default function App() {
               <Route path="payments" element={<UtilityPaymentsTab />} />
               <Route path="records" element={<UtilityRecordsTab />} />
             </Route>
-          
-            {/* Utility Payments*/}
-          <Route path="meal-payments" element={<MealPayments />}>
-            <Route index element={<Navigate to="invoices" replace />} />
-            <Route path="invoices" element={<MealInvoicesTab />} />
-            <Route path="pay" element={<MealPayTab />} />
-            <Route path="receipts" element={<MealReceiptsTab />} />
-          </Route>
-          
-          {/* Finance Reports*/}
-          <Route path="finance-reports" element={<FinanceReports />}>
-            <Route index element={<Navigate to="list" replace />} />
-            <Route path="list" element={<FinanceListTab />} />
-            <Route path="generate" element={<FinanceGenerateTab />} />
-            <Route path=":id" element={<FinanceDetailTab />} />
-          </Route>
-        </Route>
-          
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+            {/* Meal Payments */}
+            <Route path="meal-payments" element={<MealPayments />}>
+              <Route index element={<Navigate to="invoices" replace />} />
+              <Route path="invoices" element={<MealInvoicesTab />} />
+              <Route path="pay" element={<MealPayTab />} />
+              <Route path="receipts" element={<MealReceiptsTab />} />
+            </Route>
+
+            {/* Finance Reports */}
+            <Route path="finance-reports" element={<FinanceReports />}>
+              <Route index element={<Navigate to="list" replace />} />
+              <Route path="list" element={<FinanceListTab />} />
+              <Route path="generate" element={<FinanceGenerateTab />} />
+              <Route path=":id" element={<FinanceDetailTab />} />
+            </Route>
+
+            {/* Feedback */}
+            <Route path="feedback" element={<FeedbackList />} />
+            <Route path="feedback/statistics" element={<FeedbackStatistics />} />
+            <Route path="feedback/:id" element={<FeedbackDetail />} />
+
+            {/*Meal management views */}
+            <Route path="meals" element={<MealsList />} />
+            <Route path="orders" element={<OrdersList />} />
+          </Route>
+
+          {/* Public / tenant */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/properties" element={<PropertyListingPage />} />
+          <Route path="/properties/:id" element={<PropertyDetailPage />} />
+          <Route path="/rooms" element={<RoomListingPage />} />
+          <Route path="/rooms/:id" element={<RoomDetailPage />} />
+          <Route path="/rooms/:id/request" element={<RoomRequestForm />} />
+          <Route path="/account/room" element={<MyRoomPage />} />
+          <Route path="/account/meals" element={<MealBrowsePage />} />
+          <Route path="/account/meals/checkout" element={<MealCheckoutPage />} />
+
+          {/* Supplier */}
+          <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
+
+          {/* 404 */}
+          <Route path="*" element={<div className="text-center p-20 text-gray-800">404 - Page Not Found</div>} />
         </Routes>
-      </BrowserRouter>
+      </Router>
     </AuthProvider>
   );
 }
+
+export default App;

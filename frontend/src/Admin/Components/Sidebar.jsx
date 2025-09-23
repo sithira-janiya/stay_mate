@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   FaHome, FaBuilding, FaClipboardList, FaMoneyBillWave, 
   FaArrowCircleLeft, FaArrowCircleRight, FaChartBar, FaSignOutAlt, 
-  FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaUtensils, FaShoppingCart
+  FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaBolt, FaFileInvoiceDollar
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -28,8 +28,11 @@ const Sidebar = () => {
     { name: 'Move-Out Requests', icon: <FaDoorOpen />, path: '/admin/requests/moveout' },
     { name: 'Attendance', icon: <FaClock />, path: '/admin/attendance' },
     { name: 'Tenant Feedback', icon: <FaComment />, path: '/admin/feedback' },
-    { name: 'Meals', icon: <FaUtensils />, path: '/admin/meals' }, // Added Meals
-    { name: 'Orders', icon: <FaShoppingCart />, path: '/admin/orders' } // Added Orders
+    { name: "Rent Payments",    icon: <FaMoneyBillWave />,  path: "/admin/payments" },
+    { name: "Utility Payments", icon: <FaBolt />,           path: "/admin/utilities" }, 
+    { name: "Meal Payments",    icon: <FaMoneyBillWave />,  path: "/admin/meal-payments" },
+    { name: "Finance Reports",  icon: <FaFileInvoiceDollar />, path: "/admin/finance-reports" },
+    
   ];
   
   return (

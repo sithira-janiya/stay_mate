@@ -1,21 +1,22 @@
-import express from "express";
-import {
+// backend/Finance/routes/utilityRoutes.js
+const express = require("express");
+const {
   listUtilityBills,
   createUtilityBill,
   payUtilityBill,
   listUtilityPayments,
-} from "../controllers/utilityController.js";
+} = require("../controllers/utilityController");
 
 const router = express.Router();
 
 // Bills
-router.get("/bills", listUtilityBills);
+router.get("/bills",  listUtilityBills);
 router.post("/bills", createUtilityBill);
 
 // Pay a specific bill
 router.post("/bills/:id/pay", payUtilityBill);
 
-// Payments listing
+// Payments
 router.get("/payments", listUtilityPayments);
 
-export default router;
+module.exports = router;

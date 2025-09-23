@@ -1,11 +1,12 @@
-import mongoose from "mongoose";
-import MealInvoice from "../models/MealInvoice.js";
-import MealPayment from "../models/MealPayment.js";
-import { getNextCode } from "../models/codeHelper.js";
-import { isValidMonth } from "../utils/validators.js";
+// backend/Finance/controllers/mealPaymentController.js
+const mongoose = require("mongoose");
+const MealInvoice = require("../models/MealInvoice");
+const MealPayment = require("../models/MealPayment");
+const { getNextCode } = require("../models/codeHelper");
+const { isValidMonth } = require("../utils/validators");
 
 // ---------- Admin/Supplier: list invoices ----------
-export async function listMealInvoices(req, res) {
+async function listMealInvoices(req, res) {
   try {
     const { month, status, supplierId } = req.query;
     const filter = {};
@@ -15,8 +16,11 @@ export async function listMealInvoices(req, res) {
     }
     if (status) filter.status = status;
     if (supplierId) {
-      try { filter.supplierId = new mongoose.Types.ObjectId(supplierId); }
-      catch { return res.status(400).json({ message: "invalid supplierId" }); }
+      try {
+        filter.supplierId = new mongoose.Types.ObjectId(supplierId);
+      } catch {
+        return res.status(400).json({ message: "invalid supplierId" });
+      }
     }
 
     const rows = await MealInvoice.find(filter).sort({ createdAt: -1 }).lean();
@@ -28,10 +32,11 @@ export async function listMealInvoices(req, res) {
 }
 
 // ---------- Admin: pay invoice (no partials) ----------
-export async function payMealInvoice(req, res) {
+async function payMealInvoice(req, res) {
   try {
     const { invoiceId, paymentMethod, notes } = req.body || {};
-    if (!invoiceId || !paymentMethod) return res.status(400).json({ message: "invoiceId, paymentMethod required" });
+    if (!invoiceId || !paymentMethod)
+      return res.status(400).json({ message: "invoiceId, paymentMethod required" });
 
     const inv = await MealInvoice.findById(invoiceId);
     if (!inv) return res.status(404).json({ message: "Invoice not found" });
@@ -44,7 +49,7 @@ export async function payMealInvoice(req, res) {
       supplierId: inv.supplierId,
       amountCents: inv.amountCents,
       paymentMethod,
-      notes: notes || ""
+      notes: notes || "",
     });
 
     inv.status = "paid";
@@ -58,23 +63,33 @@ export async function payMealInvoice(req, res) {
 }
 
 // ---------- Admin/Supplier: list payments ----------
-export async function listMealPayments(req, res) {
+async function listMealPayments(req, res) {
   try {
     const { month, supplierId } = req.query;
     const match = {};
     if (supplierId) {
-      try { match.supplierId = new mongoose.Types.ObjectId(supplierId); }
-      catch { return res.status(400).json({ message: "invalid supplierId" }); }
+      try {
+        match.supplierId = new mongoose.Types.ObjectId(supplierId);
+      } catch {
+        return res.status(400).json({ message: "invalid supplierId" });
+      }
     }
 
     if (month) {
       if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
       const payments = await MealPayment.aggregate([
         { $match: match },
-        { $lookup: { from: "mealinvoices", localField: "invoiceId", foreignField: "_id", as: "inv" } },
+        {
+          $lookup: {
+            from: "mealinvoices",
+            localField: "invoiceId",
+            foreignField: "_id",
+            as: "inv",
+          },
+        },
         { $unwind: "$inv" },
         { $match: { "inv.month": month } },
-        { $sort: { createdAt: -1 } }
+        { $sort: { createdAt: -1 } },
       ]);
       return res.json(payments);
     }
@@ -86,3 +101,9 @@ export async function listMealPayments(req, res) {
     res.status(500).json({ message: "Failed to fetch meal payments" });
   }
 }
+
+module.exports = {
+  listMealInvoices,
+  payMealInvoice,
+  listMealPayments,
+};

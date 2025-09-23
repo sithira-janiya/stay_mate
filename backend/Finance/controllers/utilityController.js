@@ -1,10 +1,11 @@
-import UtilityBill from "../models/UtilityBill.js";
-import UtilityPayment from "../models/UtilityPayment.js";
-import { getNextCode } from "../models/codeHelper.js";
-import { ensureObjectId, isValidMonth } from "../utils/validators.js";
+// backend/Finance/controllers/utilityController.js
+const UtilityBill = require("../models/UtilityBill");
+const UtilityPayment = require("../models/UtilityPayment");
+const { getNextCode } = require("../models/codeHelper");
+const { ensureObjectId, isValidMonth } = require("../utils/validators");
 
-// GET /api/utilities/bills?propertyId=&month=YYYY-MM&type=&status=&billId=
-export async function listUtilityBills(req, res) {
+// ---------- list bills ----------
+async function listUtilityBills(req, res) {
   try {
     const { propertyId, month, type, status, billId } = req.query;
     const filter = {};
@@ -19,14 +20,14 @@ export async function listUtilityBills(req, res) {
       filter.month = month;
     }
     if (type) filter.type = type;
-    if (status) filter.status = status; // note: we also compute below
+    if (status) filter.status = status;
 
     const docs = await UtilityBill.find(filter).sort({ createdAt: -1 }).lean();
-    // compute overdue on the fly (do not overwrite DB here)
     const today = new Date();
-    const out = docs.map(d => {
+    const out = docs.map((d) => {
       if (d.status === "paid") return d;
-      const overdue = d.dueDate && new Date(dueDateOnly(d.dueDate)) < new Date(today.toDateString());
+      const overdue =
+        d.dueDate && new Date(dueDateOnly(d.dueDate)) < new Date(today.toDateString());
       return { ...d, status: overdue ? "overdue" : "unpaid" };
     });
     return res.json(out);
@@ -37,17 +38,19 @@ export async function listUtilityBills(req, res) {
 }
 
 function dueDateOnly(dt) {
-  // normalize to date-only comparison
   const x = new Date(dt);
   return new Date(x.getFullYear(), x.getMonth(), x.getDate());
 }
 
-// POST /api/utilities/bills  { propertyId, month, type, amount, dueDate, billImageUrl?, notes? }
-export async function createUtilityBill(req, res) {
+// ---------- create bill ----------
+async function createUtilityBill(req, res) {
   try {
-    const { propertyId, month, type, amount, dueDate, billImageUrl = "", notes = "" } = req.body || {};
+    const { propertyId, month, type, amount, dueDate, billImageUrl = "", notes = "" } =
+      req.body || {};
     if (!propertyId || !month || !type || amount == null || !dueDate) {
-      return res.status(400).json({ message: "propertyId, month, type, amount, dueDate required" });
+      return res
+        .status(400)
+        .json({ message: "propertyId, month, type, amount, dueDate required" });
     }
     if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
     if (Number(amount) < 0) return res.status(400).json({ message: "amount cannot be negative" });
@@ -75,8 +78,8 @@ export async function createUtilityBill(req, res) {
   }
 }
 
-// POST /api/utilities/pay  { billId, paymentMethod }
-export async function payUtilityBill(req, res) {
+// ---------- pay bill ----------
+async function payUtilityBill(req, res) {
   try {
     const { billId, paymentMethod = "Cash" } = req.body || {};
     if (!billId) return res.status(400).json({ message: "billId required" });
@@ -109,8 +112,8 @@ export async function payUtilityBill(req, res) {
   }
 }
 
-// GET /api/utilities/payments?propertyId=&month=&type=
-export async function listUtilityPayments(req, res) {
+// ---------- list payments ----------
+async function listUtilityPayments(req, res) {
   try {
     const { propertyId, month, type, billId } = req.query;
     const filter = {};
@@ -133,3 +136,10 @@ export async function listUtilityPayments(req, res) {
     return res.status(500).json({ message: "Failed to fetch utility payments" });
   }
 }
+
+module.exports = {
+  listUtilityBills,
+  createUtilityBill,
+  payUtilityBill,
+  listUtilityPayments,
+};

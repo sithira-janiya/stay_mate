@@ -52,7 +52,6 @@ export const roomAPI = {
 export * as rentAPI from './rentApi';
 export * as utilityAPI from './utilityApi';
 export * as financeAPI from './financeApi';
-// add more if needed: 
-// export * as mealSupplierAPI from './mealSupplierApi';
+export * as mealsAPI from './mealsApi';
 
 export default api;
