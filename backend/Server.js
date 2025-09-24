@@ -1,4 +1,4 @@
-// backend/server.js
+// backend/Server.js
 
 const express = require('express');
 const connectDB = require('./config/db'); // Import the database connection

@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 
 const UtilityPaymentSchema = new mongoose.Schema(
   {
-    paymentCode:   { type: String, required: true, unique: true }, // e.g. UPM001
+    paymentCode:   { type: String, required: true, unique: true },
     billId:        { type: mongoose.Schema.Types.ObjectId, ref: "UtilityBill", required: true },
     propertyId:    { type: mongoose.Schema.Types.ObjectId, ref: "Property", required: true },
     month:         { type: String, required: true, match: /^\d{4}-\d{2}$/ },

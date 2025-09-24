@@ -1,3 +1,4 @@
+//PropertyController.js
 const Property = require('../Models/PropertyModel');
 const Room = require('../Models/RoomModel');
 const mongoose = require('mongoose');

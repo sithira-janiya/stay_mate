@@ -1,3 +1,4 @@
+//RoomModel.js
 const mongoose = require('mongoose');
 
 // Embedded tenant schema (not a separate collection)

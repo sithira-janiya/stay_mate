@@ -112,7 +112,7 @@ export default function RecordsTab() {
               records.map((r) => (
                 <tr key={r._id}>
                   <td className="td">{r._id}</td>
-                  <td className="td">{r.propertyName || r.propertyId}</td>
+                  <td>{row.propertyId?.name || "-"}</td>
                   <td className="td">{r.month}</td>
                   <td className="td capitalize">{r.type}</td>
                   <td className="td">Rs. {Number(r.amount || 0).toLocaleString()}</td>
