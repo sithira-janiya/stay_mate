@@ -1,8 +1,9 @@
 // backend/Finance/controllers/utilityController.js
-const UtilityBill = require("../models/UtilityBill");
-const UtilityPayment = require("../models/UtilityPayment");
-const { getNextCode } = require("../models/codeHelper");
+const UtilityBill     = require("../models/UtilityBill");      
+const UtilityPayment  = require("../models/UtilityPayment");   
+const { getNextCode } = require("../models/codeHelper");      
 const { ensureObjectId, isValidMonth } = require("../utils/validators");
+
 
 // ---------- list bills ----------
 async function listUtilityBills(req, res) {
@@ -22,7 +23,12 @@ async function listUtilityBills(req, res) {
     if (type) filter.type = type;
     if (status) filter.status = status;
 
-    const docs = await UtilityBill.find(filter).sort({ createdAt: -1 }).lean();
+   // list bills
+  const docs = await UtilityBill.find(filter)
+  .sort({ createdAt: -1 })
+  .populate({ path: 'propertyId', select: 'name' })  // <-- add this
+  .lean();
+
     const today = new Date();
     const out = docs.map((d) => {
       if (d.status === "paid") return d;
@@ -129,8 +135,14 @@ async function listUtilityPayments(req, res) {
     }
     if (type) filter.type = type;
 
-    const pays = await UtilityPayment.find(filter).sort({ createdAt: -1 }).lean();
-    return res.json(pays);
+    // list payments
+  const pays = await UtilityPayment.find(filter)
+    .sort({ createdAt: -1 })
+    .populate({ path: 'propertyId', select: 'name' })  
+    .lean();
+
+  return res.json(pays);
+
   } catch (e) {
     console.error("listUtilityPayments error:", e);
     return res.status(500).json({ message: "Failed to fetch utility payments" });

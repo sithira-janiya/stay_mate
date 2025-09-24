@@ -1,3 +1,4 @@
+//utilitiesApi.js
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 function buildUrl(path, params = {}) {
@@ -8,13 +9,22 @@ function buildUrl(path, params = {}) {
   return url.toString();
 }
 
-// Dropdown needs properties list
+
 export async function getProperties() {
-  const url = buildUrl("/properties"); // 🔶 if your team’s endpoint differs, adjust here
+  const url = buildUrl("/properties");
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
-  return res.json();
+
+  const data = await res.json();
+
+  // Normalize to an array for the UI
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data?.properties)) return data.data.properties;
+  if (Array.isArray(data?.properties)) return data.properties;
+  if (Array.isArray(data?.data)) return data.data;
+  return [];
 }
+
 
 export async function getUtilityBills({ propertyId, month, type, status, billId } = {}) {
   const url = buildUrl("/utilities/bills", { propertyId, month, type, status, billId });

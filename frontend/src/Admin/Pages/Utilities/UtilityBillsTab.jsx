@@ -1,4 +1,4 @@
-// src/Pages/Admin/Utilities/BillsTab.jsx
+// src/Pages/Admin/Utilities/UtilityBillsTab.jsx
 import { useEffect, useMemo, useState } from "react";
 import { createUtilityBill, getProperties } from "../../../services/utilitiesApi";
 

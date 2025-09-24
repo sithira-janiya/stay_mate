@@ -1,4 +1,4 @@
-// src/Pages/Admin/Utilities/PaymentsTab.jsx
+// src/Pages/Admin/Utilities/UtilityPaymentsTab.jsx
 import { useEffect, useState } from "react";
 import { getUtilityBills, payUtilityBill } from "../../../services/utilitiesApi";
 
@@ -23,16 +23,13 @@ export default function PaymentsTab() {
     }
   }
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function onPay(billId) {
     setErr("");
     setMsg("");
     setPayingId(billId);
     try {
-      // You can add a selector for payment method later
       await payUtilityBill({ billId, paymentMethod: "Cash" });
       setMsg("Bill marked as paid");
       await load();
@@ -72,11 +69,14 @@ export default function PaymentsTab() {
             bills.map((b) => (
               <tr key={b._id}>
                 <td className="td">{b._id}</td>
-                <td className="td">{b.propertyName || b.propertyId}</td>
+                {/* ⬇️ show the populated property name if available; fallback to id */}
+                <td className="td">{b.propertyId?.name || String(b.propertyId || "-")}</td>
                 <td className="td">{b.month}</td>
                 <td className="td capitalize">{b.type}</td>
                 <td className="td">Rs. {Number(b.amount || 0).toLocaleString()}</td>
-                <td className="td">{b.dueDate ? new Date(b.dueDate).toLocaleDateString() : "-"}</td>
+                <td className="td">
+                  {b.dueDate ? new Date(b.dueDate).toLocaleDateString() : "-"}
+                </td>
                 <td className="td">
                   <button
                     className="btn-outline"
