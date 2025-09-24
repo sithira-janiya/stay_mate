@@ -1,6 +1,28 @@
-// src/Pages/Admin/Utilities/RecordsTab.jsx
-import { useEffect, useState } from "react";
+// src/Pages/Admin/Utilities/UtilityRecordsTab.jsx
+import { useEffect, useState, useMemo } from "react";
 import { getUtilityBills } from "../../../services/utilitiesApi";
+
+const fmtDate = (val) => {
+  if (!val) return "-";
+  const d = new Date(val);
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString();
+};
+
+function StatusBadge({ status }) {
+  const raw = (status || "").toLowerCase();
+  const label = raw === "unpaid" ? "pending" : raw || "-";
+  const cls =
+    raw === "paid"
+      ? "bg-green-600/20 text-green-300 border-green-600/40"
+      : raw === "overdue"
+      ? "bg-red-600/20 text-red-300 border-red-600/40"
+      : "bg-amber-500/20 text-amber-300 border-amber-500/40"; // pending/other
+  return (
+    <span className={`px-2 py-1 text-xs border rounded-md capitalize ${cls}`}>
+      {label}
+    </span>
+  );
+}
 
 export default function RecordsTab() {
   const [filters, setFilters] = useState({
@@ -13,6 +35,11 @@ export default function RecordsTab() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
+  const hasFilters = useMemo(
+    () => !!(filters.propertyId || filters.month || filters.status || filters.billId),
+    [filters]
+  );
+
   async function load() {
     setErr("");
     setLoading(true);
@@ -21,11 +48,12 @@ export default function RecordsTab() {
         propertyId: filters.propertyId?.trim() || undefined,
         month: filters.month || undefined,
         status: filters.status || undefined,
-        billId: filters.billId?.trim() || undefined,
+        billId: filters.billId?.trim() || undefined, // accepts ObjectId OR billCode (backend updated)
       });
       setRecords(Array.isArray(res) ? res : []);
     } catch (e) {
       setErr(e?.message || "Failed to load records");
+      setRecords([]); // keep UI stable
     } finally {
       setLoading(false);
     }
@@ -68,17 +96,17 @@ export default function RecordsTab() {
             onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
           >
             <option value="">All</option>
-            <option value="unpaid">Unpaid</option>
+            <option value="unpaid">Pending</option>
             <option value="paid">Paid</option>
             <option value="overdue">Overdue</option>
           </select>
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm text-gray-300 mb-1">Bill ID</label>
+          <label className="text-sm text-gray-300 mb-1">Bill ID / Code</label>
           <input
             className="inp"
-            placeholder="Exact _id"
+            placeholder="Mongo _id or UBW0001"
             value={filters.billId}
             onChange={(e) => setFilters((f) => ({ ...f, billId: e.target.value }))}
           />
@@ -111,19 +139,25 @@ export default function RecordsTab() {
             {records.length ? (
               records.map((r) => (
                 <tr key={r._id}>
-                  <td className="td">{r._id}</td>
-                  <td>{row.propertyId?.name || "-"}</td>
-                  <td className="td">{r.month}</td>
-                  <td className="td capitalize">{r.type}</td>
-                  <td className="td">Rs. {Number(r.amount || 0).toLocaleString()}</td>
-                  <td className="td">{r.dueDate ? new Date(r.dueDate).toLocaleDateString() : "-"}</td>
-                  <td className="td">{r.status}</td>
+                  <td className="td">{r.billCode || r._id}</td>
+                  <td className="td">
+                    {r.propertyId?.name ??
+                      r.propertyId?.title ??
+                      (typeof r.propertyId === "string" ? r.propertyId : "-")}
+                  </td>
+                  <td className="td">{r.month || "-"}</td>
+                  <td className="td capitalize">{r.type || "-"}</td>
+                  <td className="td">Rs. {Number(r.amount ?? 0).toLocaleString()}</td>
+                  <td className="td">{fmtDate(r.dueDate)}</td>
+                  <td className="td">
+                    <StatusBadge status={r.status} />
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td className="td text-gray-400" colSpan={7}>
-                  {loading ? "Loading…" : "No records"}
+                  {loading ? "Loading…" : hasFilters ? "No records found" : "No records"}
                 </td>
               </tr>
             )}

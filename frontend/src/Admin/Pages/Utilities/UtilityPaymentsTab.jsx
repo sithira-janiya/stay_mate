@@ -68,8 +68,7 @@ export default function PaymentsTab() {
           {bills.length ? (
             bills.map((b) => (
               <tr key={b._id}>
-                <td className="td">{b._id}</td>
-                {/* ⬇️ show the populated property name if available; fallback to id */}
+                <td className="td">{b.billCode || b._id}</td>
                 <td className="td">{b.propertyId?.name || String(b.propertyId || "-")}</td>
                 <td className="td">{b.month}</td>
                 <td className="td capitalize">{b.type}</td>

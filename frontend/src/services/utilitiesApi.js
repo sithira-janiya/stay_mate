@@ -1,69 +1,79 @@
-//utilitiesApi.js
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 function buildUrl(path, params = {}) {
   const url = new URL(`${API_BASE}${path}`);
-  Object.entries(params).forEach(([k, v]) => {
+  for (const [k, v] of Object.entries(params)) {
     if (v != null && v !== "") url.searchParams.set(k, v);
-  });
+  }
   return url.toString();
 }
 
+async function fetchJson(input, init = {}, timeoutMs = 15000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(input, {
+      ...init,
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        ...(init.headers || {}),
+      },
+    });
 
+    const text = await res.text().catch(() => "");
+
+    if (!res.ok) {
+      let msg = text || `HTTP ${res.status}`;
+      try {
+        const json = JSON.parse(text);
+        if (json?.message) msg = json.message;
+      } catch {}
+      throw new Error(msg);
+    }
+
+    return text ? JSON.parse(text) : null;
+  } catch (e) {
+    if (e.name === "AbortError") throw new Error("Request timed out");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// --- Properties dropdown ---
 export async function getProperties() {
-  const url = buildUrl("/properties");
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
-
-  const data = await res.json();
-
-  // Normalize to an array for the UI
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.data?.properties)) return data.data.properties;
-  if (Array.isArray(data?.properties)) return data.properties;
-  if (Array.isArray(data?.data)) return data.data;
+  const raw = await fetchJson(buildUrl("/properties"));
+  // Normalize to an array (handles teammate controller shapes)
+  if (Array.isArray(raw)) return raw;
+  if (Array.isArray(raw?.data?.properties)) return raw.data.properties;
+  if (Array.isArray(raw?.properties)) return raw.properties;
+  if (Array.isArray(raw?.data)) return raw.data;
   return [];
 }
 
-
+// --- Utility bills & payments ---
 export async function getUtilityBills({ propertyId, month, type, status, billId } = {}) {
-  const url = buildUrl("/utilities/bills", { propertyId, month, type, status, billId });
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
-  return res.json();
+  return fetchJson(buildUrl("/utilities/bills", { propertyId, month, type, status, billId }));
 }
 
 export async function createUtilityBill(payload) {
-  const url = `${API_BASE}/utilities/bills`;
-  const res = await fetch(url, {
+  return fetchJson(`${API_BASE}/utilities/bills`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`POST ${url} -> ${res.status} ${text}`);
-  }
-  return res.json();
 }
 
+// NOTE: Path matches your current backend (/api/utilities/pay) that expects billId in the body
 export async function payUtilityBill({ billId, paymentMethod }) {
-  const url = `${API_BASE}/utilities/pay`;
-  const res = await fetch(url, {
+  return fetchJson(`${API_BASE}/utilities/pay`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ billId, paymentMethod }),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`POST ${url} -> ${res.status} ${text}`);
-  }
-  return res.json();
 }
 
 export async function getUtilityPayments({ propertyId, month, type, billId } = {}) {
-  const url = buildUrl("/utilities/payments", { propertyId, month, type, billId });
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) throw new Error(`GET ${url} -> ${res.status}`);
-  return res.json();
+  return fetchJson(buildUrl("/utilities/payments", { propertyId, month, type, billId }));
 }

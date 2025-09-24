@@ -1,4 +1,3 @@
-// backend/Finance/routes/utilityRoutes.js
 const express = require("express");
 const {
   listUtilityBills,
@@ -10,13 +9,14 @@ const {
 const router = express.Router();
 
 // Bills
-router.get("/bills",  listUtilityBills);
+router.get("/bills", listUtilityBills);
 router.post("/bills", createUtilityBill);
 
-// Pay a specific bill
-router.post("/bills/:id/pay", payUtilityBill);
+// Pay routes (support both styles)
+router.post("/bills/:id/pay", payUtilityBill); // existing
+router.post("/pay", payUtilityBill);           // <-- add this
 
-// Payments
+// Payments listing
 router.get("/payments", listUtilityPayments);
 
 module.exports = router;

@@ -1,4 +1,3 @@
-//financeApi.js
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 function buildUrl(path, params = {}) {
@@ -9,7 +8,6 @@ function buildUrl(path, params = {}) {
   return url.toString();
 }
 
-// Small helper: fetch with timeout + better errors
 async function fetchJson(input, init = {}, timeoutMs = 15000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -24,15 +22,12 @@ async function fetchJson(input, init = {}, timeoutMs = 15000) {
     });
     const text = await res.text().catch(() => "");
     if (!res.ok) {
-      let detail = text;
+      let msg = text || `HTTP ${res.status}`;
       try {
-        detail = JSON.parse(text)?.message || text;
+        const json = JSON.parse(text);
+        if (json?.message) msg = json.message;
       } catch {}
-      throw new Error(
-        `${init.method || "GET"} ${
-          typeof input === "string" ? input : input.url
-        } -> ${res.status} ${res.statusText} ${detail || ""}`.trim()
-      );
+      throw new Error(msg);
     }
     return text ? JSON.parse(text) : null;
   } catch (e) {
@@ -42,15 +37,13 @@ async function fetchJson(input, init = {}, timeoutMs = 15000) {
     clearTimeout(timer);
   }
 }
-// financeApi.js
+
 export async function getFinanceReports({ type, month } = {}) {
-  const url = buildUrl("/finance-reports", { type, month });
-  return fetchJson(url);
+  return fetchJson(buildUrl("/finance-reports", { type, month }));
 }
 
 export async function generateFinanceReport({ reportType, month, notes }) {
-  const url = `${API_BASE}/finance-reports/generate`;
-  return fetchJson(url, {
+  return fetchJson(`${API_BASE}/finance-reports/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reportType, month, notes }),
@@ -58,13 +51,10 @@ export async function generateFinanceReport({ reportType, month, notes }) {
 }
 
 export async function getFinanceReport(reportId) {
-  const url = `${API_BASE}/finance-reports/${reportId}`;
-  return fetchJson(url);
+  return fetchJson(`${API_BASE}/finance-reports/${reportId}`);
 }
 
-
-// (Optional) Export/download a report in CSV/PDF
+// Example placeholder if you later add export endpoint
 export async function exportFinanceReport({ reportId, format = "pdf" }) {
-  const url = buildUrl(`/owner/finance/finance-reports/${reportId}/export`, { format });
-  return fetchJson(url);
+  return fetchJson(buildUrl(`/owner/finance/finance-reports/${reportId}/export`, { format }));
 }

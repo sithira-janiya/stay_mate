@@ -2,12 +2,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { createUtilityBill, getProperties } from "../../../services/utilitiesApi";
 
-// YYYY-MM for default month
-const currentMonth = () => new Date().toISOString().slice(0, 7);
-// YYYY-MM-DD for min(dueDate)
-const todayISO = () => new Date().toISOString().slice(0, 10);
+// Helpers
+const pad2 = (n) => String(n).padStart(2, "0");
+const getThisMonthYYYYMM = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+};
+const getLastMonthYYYYMM = () => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+};
+// first day of the current month (YYYY-MM-DD)
+const firstDayThisMonthISO = () => {
+  const d = new Date();
+  const first = new Date(d.getFullYear(), d.getMonth(), 1);
+  return first.toISOString().slice(0, 10);
+};
 
 export default function BillsTab() {
+  const THIS_MONTH = getThisMonthYYYYMM();
+  const LAST_MONTH = getLastMonthYYYYMM();
+  const DUE_MIN = firstDayThisMonthISO();
+
   const [properties, setProperties] = useState([]);
   const [loadingProps, setLoadingProps] = useState(true);
 
@@ -18,7 +35,7 @@ export default function BillsTab() {
   // local form state (for basic validation & UX)
   const [form, setForm] = useState({
     propertyId: "",
-    month: currentMonth(),
+    month: THIS_MONTH,          // default to this month
     type: "water",
     amount: "",
     dueDate: "",
@@ -32,11 +49,16 @@ export default function BillsTab() {
     return Number.isNaN(n) || n < 0;
   }, [form.amount]);
 
-  const dueDateMin = useMemo(() => todayISO(), []);
+  // month must be either this month or last month
+  const monthInvalid = useMemo(() => {
+    return !(form.month === THIS_MONTH || form.month === LAST_MONTH);
+  }, [form.month, THIS_MONTH, LAST_MONTH]);
+
+  // due date must be >= first day of current month
   const dueDateInvalid = useMemo(() => {
     if (!form.dueDate) return true;
-    return form.dueDate < dueDateMin; // no past due date
-  }, [form.dueDate, dueDateMin]);
+    return form.dueDate < DUE_MIN;
+  }, [form.dueDate, DUE_MIN]);
 
   const formDisabled = submitting || loadingProps;
 
@@ -62,23 +84,25 @@ export default function BillsTab() {
     // extra guards
     if (!form.propertyId) return setErr("Please select a property.");
     if (amountInvalid) return setErr("Amount must be a number ≥ 0.");
-    if (dueDateInvalid) return setErr("Due date cannot be in the past.");
+    if (monthInvalid) return setErr(`Month must be either ${LAST_MONTH} or ${THIS_MONTH}.`);
+    if (dueDateInvalid) return setErr(`Due date cannot be before ${DUE_MIN}.`);
 
     try {
-      setSubmitting(true);
-      await createUtilityBill({
-        propertyId: form.propertyId,                 // NOTE: expects ObjectId
-        month: form.month,                           // YYYY-MM
-        type: form.type,                             // "water"|"electricity"
-        amount: Number(form.amount),                 // LKR
-        dueDate: form.dueDate,                       // YYYY-MM-DD
-        notes: form.notes?.trim() || "",
-      });
-      setMsg("Utility bill created!");
+       setSubmitting(true);
+        await createUtilityBill({
+          propertyId: form.propertyId,
+          month: form.month,
+          type: form.type,
+          amount: Number(form.amount),
+          dueDate: form.dueDate,
+          notes: form.notes?.trim() || "",
+        });
+        setMsg("Utility bill created!");
+      
       // reset except property (so you can add multiple quickly)
       setForm((f) => ({
         ...f,
-        month: currentMonth(),
+        month: THIS_MONTH,
         type: "water",
         amount: "",
         dueDate: "",
@@ -97,7 +121,8 @@ export default function BillsTab() {
         <span className="text-xl">Add Utility Bill</span>
       </div>
       <p className="page-subtle">
-        Create a monthly utility bill (water or electricity) for a property. Due date cannot be in the past.
+        Month can be <strong>this month</strong> or <strong>last month</strong> only.
+        Due date cannot be earlier than the <strong>first day of this month</strong>.
       </p>
 
       {err && <div className="card-tight text-red-400">{err}</div>}
@@ -124,17 +149,22 @@ export default function BillsTab() {
           </select>
         </div>
 
-        {/* Month */}
+        {/* Month (limited to last+this month) */}
         <div className="flex flex-col">
           <label className="text-sm text-gray-300 mb-1">Month</label>
           <input
             type="month"
-            className="inp"
+            className={`inp ${monthInvalid ? "ring-2 ring-red-500" : ""}`}
             value={form.month}
+            min={LAST_MONTH}
+            max={THIS_MONTH}
             onChange={(e) => setForm((f) => ({ ...f, month: e.target.value }))}
             required
             disabled={formDisabled}
           />
+          <span className="text-xs text-gray-400 mt-1">
+            Allowed: {LAST_MONTH} or {THIS_MONTH}
+          </span>
         </div>
 
         {/* Type */}
@@ -168,18 +198,21 @@ export default function BillsTab() {
           />
         </div>
 
-        {/* Due Date */}
+        {/* Due Date (>= first day of this month) */}
         <div className="flex flex-col">
           <label className="text-sm text-gray-300 mb-1">Due Date</label>
           <input
             type="date"
-            min={dueDateMin}
+            min={DUE_MIN}
             className={`inp ${dueDateInvalid && form.dueDate ? "ring-2 ring-red-500" : ""}`}
             value={form.dueDate}
             onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
             required
             disabled={formDisabled}
           />
+          <span className="text-xs text-gray-400 mt-1">
+            Must be on/after {DUE_MIN}
+          </span>
         </div>
 
         {/* Notes */}
