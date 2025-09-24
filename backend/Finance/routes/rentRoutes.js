@@ -5,20 +5,20 @@ const {
   listPayments,
   generateInvoices,
   createReceipt,
+  deleteInvoice,          
 } = require("../controllers/rentController");
 
 const router = express.Router();
 
-// GET /api/owner/rent/invoices?propertyId=&tenantId=&month=YYYY-MM
-router.get("/invoices",  listInvoices);
 
-// GET /api/owner/rent/payments?propertyId=&tenantId=&month=YYYY-MM
-router.get("/payments",  listPayments);
+router.get("/invoices", listInvoices);
 
-// POST /api/owner/rent/generate { month: "YYYY-MM", dueDate: "YYYY-MM-DD" }
+router.get("/payments", listPayments);
+
 router.post("/generate", generateInvoices);
 
-// POST /api/owner/rent/receipt { invoiceId, amountPaid, paymentMethod }
-router.post("/receipt",  createReceipt);
+router.post("/receipt", createReceipt);
+
+router.delete("/invoices/:id", deleteInvoice);  
 
 module.exports = router;

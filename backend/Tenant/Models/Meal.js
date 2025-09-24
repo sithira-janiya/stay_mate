@@ -1,3 +1,4 @@
+//backend/Tenant/Models/Meal.js
 const mongoose = require('mongoose');
 
 const mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER', 'DESSERT'];

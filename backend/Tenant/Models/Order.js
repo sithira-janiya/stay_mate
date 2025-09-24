@@ -1,3 +1,4 @@
+//backend/Tenant/Models/Order.js
 const mongoose = require('mongoose');
 
 const orderStatuses = ['PLACED','ACCEPTED','PREPARING','OUT_FOR_DELIVERY','DELIVERED','CANCELLED'];

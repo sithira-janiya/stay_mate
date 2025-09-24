@@ -3,7 +3,10 @@ import { NavLink, Outlet } from "react-router-dom";
 import { HiOutlineCurrencyDollar } from "react-icons/hi";
 
 const Tab = ({ to, label }) => (
-  <NavLink to={to} className={({ isActive }) => `tab ${isActive ? "tab-active" : ""}`}>
+  <NavLink
+    to={to}
+    className={({ isActive }) => `tab ${isActive ? "tab-active" : ""}`}
+  >
     {label}
   </NavLink>
 );
@@ -17,8 +20,9 @@ export default function RentPayments() {
       </div>
 
       <div className="tabs">
-        <Tab to="invoices" label="Rent Invoices" />
         <Tab to="generate" label="Generate Rent Invoices" />
+        <Tab to="invoices" label="Rent Invoices" />
+        <Tab to="unpaid" label="Unpaid Invoices" />  
         <Tab to="receipts" label="Rent Receipts" />
       </div>
 

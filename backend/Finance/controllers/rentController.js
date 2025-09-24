@@ -5,41 +5,70 @@ const Payment = require("../models/Payment");
 const { getNextCode } = require("../models/codeHelper");
 const { isValidMonth, ensureObjectId } = require("../utils/validators");
 
-const { User, Room, Order /* , UtilitySetting */ } = require("../models/ExternalModels");
+// Teammates' models via ExternalModels (Room has property:ObjectId, occupants:[{_id:String}], price.amount)
+const { Room, Order } = require("../models/ExternalModels");
+
+// NEW: centralized rent calculation helpers (utilities + meals + totals)
+const rentCalc = require("../services/rentCalc");
 
 // ---------- helpers ----------
-function monthToRange(yyyyMM) {
-  const [y, m] = yyyyMM.split("-").map(Number);
-  const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0));
-  const end = new Date(Date.UTC(y, m, 1, 0, 0, 0));
-  return { start, end };
+function yymm(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 // ---------- list invoices ----------
 async function listInvoices(req, res) {
   try {
-    const { propertyId, tenantId, month } = req.query;
+    const { propertyId, tenantId, month, status } = req.query;
     const filter = {};
     if (propertyId) filter.propertyId = ensureObjectId(propertyId) || propertyId;
-    if (tenantId)   filter.tenantId   = tenantId; // <- keep as string
+    if (tenantId)   filter.tenantId   = String(tenantId); // keep string
     if (month) {
       if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
       filter.month = month;
     }
 
-    const invoices = await RentInvoice.find(filter)
+    const raw = await RentInvoice.find(filter)
       .sort({ createdAt: -1 })
-      .populate({ path: 'propertyId', select: 'name' }) // nice for UI
-      .populate({ path: 'roomId',     select: 'roomNo' })
+      .populate({ path: "propertyId", select: "name" })
+      .populate({ path: "roomId", select: "roomNo" })
       .lean();
 
-    return res.json(invoices);
+    const today = new Date();
+    const withDerived = raw.map((inv) => {
+      const isPaid = inv.status === "paid";
+      let derivedStatus = inv.status; // 'pending' or 'paid'
+      if (!isPaid && inv.dueDate) {
+        const dueOnly = new Date(inv.dueDate);
+        const dueMidnight = new Date(dueOnly.getFullYear(), dueOnly.getMonth(), dueOnly.getDate());
+        const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        if (dueMidnight < todayMidnight) derivedStatus = "overdue";
+      }
+      return {
+        ...inv,
+        derivedStatus,
+        propertyName: inv.propertyId?.name,
+        roomNumber: inv.roomId?.roomNo,
+      };
+    });
+
+    let out = withDerived;
+    if (status) {
+      if (status === "unpaid") {
+        out = withDerived.filter(
+          (i) => i.derivedStatus === "pending" || i.derivedStatus === "overdue"
+        );
+      } else {
+        out = withDerived.filter((i) => i.derivedStatus === status);
+      }
+    }
+
+    return res.json(out);
   } catch (err) {
     console.error("listInvoices error:", err);
     return res.status(500).json({ message: "Failed to fetch invoices" });
   }
 }
-
 
 // ---------- list payments ----------
 async function listPayments(req, res) {
@@ -47,7 +76,7 @@ async function listPayments(req, res) {
     const { propertyId, tenantId, month } = req.query;
     const invFilter = {};
     if (propertyId) invFilter.propertyId = ensureObjectId(propertyId) || propertyId;
-    if (tenantId) invFilter.tenantId = ensureObjectId(tenantId) || tenantId;
+    if (tenantId)   invFilter.tenantId   = String(tenantId);
     if (month) {
       if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
       invFilter.month = month;
@@ -71,92 +100,91 @@ async function listPayments(req, res) {
 // ---------- generate invoices ----------
 async function generateInvoices(req, res) {
   try {
-    const { month, dueDate } = req.body || {};
+    const { propertyId, month, dueDate } = req.body || {};
+
+    // Month restriction: only last month or this month
     if (!isValidMonth(month)) return res.status(400).json({ message: "month must be YYYY-MM" });
+    const now = new Date();
+    const thisMonth = yymm(now);
+    const lastMonth = yymm(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    if (month !== thisMonth && month !== lastMonth) {
+      return res.status(400).json({ message: `month must be either ${lastMonth} or ${thisMonth}` });
+    }
+
+    // Due date restriction: only THIS month or NEXT month
     if (!dueDate) return res.status(400).json({ message: "dueDate required" });
-
-    const today = new Date();
     const due = new Date(dueDate);
-    if (due < new Date(today.toDateString())) {
-      return res.status(400).json({ message: "dueDate cannot be in the past" });
+    if (Number.isNaN(due.getTime())) {
+      return res.status(400).json({ message: "Invalid dueDate" });
+    }
+    const firstOfThis = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstOfFollowing = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+    if (!(due >= firstOfThis && due < firstOfFollowing)) {
+      return res.status(400).json({
+        message: `dueDate must be within ${firstOfThis.toISOString().slice(0, 10)} and ${new Date(
+          firstOfFollowing - 1
+        )
+          .toISOString()
+          .slice(0, 10)} (this month or next month)`,
+      });
     }
 
-    const { start, end } = monthToRange(month);
+    // 1) Rooms (optionally limited by property)
+    const roomQuery = {};
+    if (propertyId) roomQuery.property = ensureObjectId(propertyId) || propertyId;
 
-    // Pull rooms; you can filter if you want, e.g. { status: { $in: ['available','full'] } }
-    const rooms = await Room.find(
-      {},
-      { _id: 1, property: 1, occupants: 1, price: 1 } // NOTE: property + price
-    ).lean();
+    const rooms = await Room.find(roomQuery, {
+      _id: 1,
+      property: 1,
+      occupants: 1, // embedded [{ _id: String }]
+      price: 1,     // { amount }
+    }).lean();
 
-    const assignments = [];
-    for (const r of rooms) {
-      const occ = Array.isArray(r.occupants) ? r.occupants : [];
-      for (const o of occ) {
-        assignments.push({
-          tenantId:  String(o._id),                     // <- string tenant id
-          propertyId: r.property,                       // <- ObjectId; field is 'property'
-          roomId:    r._id,                             // <- ObjectId
-          baseRent:  Number(r?.price?.amount || 0),     // <- from price.amount
-        });
-      }
-    }
-
+    // 2) Build per-tenant assignments
+    const assignments = rentCalc.buildAssignmentsFromRooms(rooms);
     if (!assignments.length) {
       return res.status(200).json({ createdCount: 0, invoices: [], message: "No occupants found" });
     }
 
-    // TODO: utility sharing when your monthly utilities model is ready
-    const utilMap = new Map(); // propertyId(string) -> monthly total number
+    // 3) Utilities for the month, by property
+    const propertyIdSet = new Set(assignments.map(a => String(a.propertyId)));
+    const utilitiesByProperty = await rentCalc.getUtilitiesByProperty({ month, propertyIds: propertyIdSet });
 
-    // Meals per tenant for the month (if you have orders collection)
-    const orders = await Order.aggregate([
-      { $match: { createdAt: { $gte: start, $lt: end } } },
-      { $group: { _id: "$userId", totalCents: { $sum: "$totalCents" } } },
-    ]);
-    const mealsMap = new Map();
-    for (const o of orders) {
-      const rupees = Math.round(Number(o.totalCents || 0) / 100);
-      mealsMap.set(String(o._id), rupees);
-    }
+    // 4) Tenants per property for utility splitting
+    const tenantsByProperty = rentCalc.mapTenantsByProperty(assignments);
 
-    // Tenants per property (for utility share)
-    const tenantsByProperty = new Map();
-    for (const a of assignments) {
-      const pKey = String(a.propertyId);
-      if (!tenantsByProperty.has(pKey)) tenantsByProperty.set(pKey, new Set());
-      tenantsByProperty.get(pKey).add(String(a.tenantId));
-    }
+    // 5) Meals by tenant (DELIVERED only) within the month
+    const mealsByTenant = await rentCalc.getMealCostByTenant({ OrderModel: Order, month });
 
+    // 6) Compute final totals
+    const computed = rentCalc.computeAmounts({
+      assignments,
+      utilitiesByProperty,
+      tenantsByProperty,
+      mealsByTenant,
+    });
+
+    // 7) Create invoices, skipping duplicates (tenantId + month)
     let createdCount = 0;
     const results = [];
 
-    for (const a of assignments) {
-      const pKey = String(a.propertyId);
-      const tKey = String(a.tenantId);
+    for (const a of computed) {
+      const tKey = a.tenantId;
 
-      const propertyTotalUtil = utilMap.get(pKey) || 0;
-      const tenantCount       = tenantsByProperty.get(pKey)?.size || 1;
-      const utilityShare      = Math.round(propertyTotalUtil / tenantCount);
-
-      const mealCost = Math.round(mealsMap.get(tKey) || 0);
-      const baseRent = Math.round(Number(a.baseRent || 0));
-      const total    = baseRent + utilityShare + mealCost;
-
-      const existing = await RentInvoice.findOne({ tenantId: a.tenantId, month }).lean();
+      const existing = await RentInvoice.findOne({ tenantId: tKey, month }).lean();
       if (existing) { results.push(existing); continue; }
 
-      const invoiceCode = await getNextCode("invoice", "INV", 3);
+      const invoiceCode = await getNextCode("rentInvoice", "RINV", 4);
       const newInv = await RentInvoice.create({
         invoiceCode,
-        tenantId: a.tenantId,              // string
-        propertyId: a.propertyId,          // ObjectId
-        roomId: a.roomId,                  // ObjectId
+        tenantId: tKey,
+        propertyId: a.propertyId,
+        roomId: a.roomId,
         month,
-        baseRent,
-        utilityShare,
-        mealCost,
-        total,
+        baseRent: a.baseRent,
+        utilityShare: a.utilityShare,
+        mealCost: a.mealCost,
+        total: a.total,
         status: "pending",
         dueDate: due,
       });
@@ -171,7 +199,6 @@ async function generateInvoices(req, res) {
     return res.status(500).json({ message: "Failed to generate invoices" });
   }
 }
-
 
 // ---------- create receipt ----------
 async function createReceipt(req, res) {
@@ -211,9 +238,35 @@ async function createReceipt(req, res) {
   }
 }
 
+// ---------- delete invoice ----------
+async function deleteInvoice(req, res) {
+  try {
+    const _id = ensureObjectId(req.params.id);
+    if (!_id) return res.status(400).json({ message: "Invalid invoice id" });
+
+    const inv = await RentInvoice.findById(_id);
+    if (!inv) return res.status(404).json({ message: "Invoice not found" });
+
+    if (inv.status === "paid") {
+      return res.status(400).json({ message: "Cannot delete a paid invoice" });
+    }
+    const hasPayment = await Payment.exists({ invoiceId: _id });
+    if (hasPayment) {
+      return res.status(400).json({ message: "Cannot delete invoice with recorded payment" });
+    }
+
+    await RentInvoice.deleteOne({ _id });
+    return res.status(204).send();
+  } catch (err) {
+    console.error("deleteInvoice error:", err);
+    return res.status(500).json({ message: "Failed to delete invoice" });
+  }
+}
+
 module.exports = {
   listInvoices,
   listPayments,
   generateInvoices,
   createReceipt,
+  deleteInvoice,
 };

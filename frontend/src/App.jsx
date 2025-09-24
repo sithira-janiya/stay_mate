@@ -20,6 +20,7 @@ import TenantAttendanceDetail from './Admin/Pages/Attendance/TenantAttendanceDet
 
 // Rent Payments
 import Payments from './Admin/Pages/Payments/RentPayments';
+import UnpaidInvoicesTab from './Admin/Pages/Payments/UnpaidInvoicesTab';
 import RentInvoicesTab from './Admin/Pages/Payments/RentInvoicesTab';
 import RentGenerateTab from './Admin/Pages/Payments/RentGenerateTab';
 import RentReceiptsTab from './Admin/Pages/Payments/RentReceiptsTab';
@@ -110,6 +111,7 @@ function App() {
             {/* Rent Payments */}
             <Route path="payments" element={<Payments />}>
               <Route index element={<Navigate to="invoices" replace />} />
+              <Route path="unpaid" element={<UnpaidInvoicesTab />} />
               <Route path="invoices" element={<RentInvoicesTab />} />
               <Route path="generate" element={<RentGenerateTab />} />
               <Route path="receipts" element={<RentReceiptsTab />} />
