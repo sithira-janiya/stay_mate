@@ -48,4 +48,10 @@ export const roomAPI = {
   smartAllocation: () => api.get('/rooms/allocation/smart'),
 };
 
+// ---------------- Your APIs (modular) ----------------
+export * as rentAPI from './rentApi';
+export * as utilityAPI from './utilityApi';
+export * as financeAPI from './financeApi';
+export * as mealsAPI from './mealsApi';
+
 export default api;

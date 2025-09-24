@@ -12,14 +12,14 @@ const HomePage = () => {
   const testimonials = [
     {
       id: 1,
-      name: "John Smith",
+      name: "Nimal Piyath",
       role: "Student",
       image: "https://randomuser.me/api/portraits/men/32.jpg",
       text: "Finding accommodation was so easy with BoardingHouse. I found a perfect room close to my university within my budget."
     },
     {
       id: 2,
-      name: "Maria Garcia",
+      name: "Ishara Dinesh",
       role: "Young Professional",
       image: "https://randomuser.me/api/portraits/women/44.jpg",
       text: "The platform made it simple to compare different boarding houses. I love my new place and the amenities it offers."
@@ -123,10 +123,10 @@ const HomePage = () => {
                   <label className="block text-sm text-gray-400 mb-2">Price Range</label>
                   <select className="w-full py-3 px-4 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
                     <option value="">All price ranges</option>
-                    <option value="0-5000">₱0 - ₱5,000</option>
-                    <option value="5000-10000">₱5,000 - ₱10,000</option>
-                    <option value="10000-15000">₱10,000 - ₱15,000</option>
-                    <option value="15000+">₱15,000+</option>
+                    <option value="0-5000">LKR:0 - LKR:5,000</option>
+                    <option value="5000-10000">LKR:5,000 - LKR:10,000</option>
+                    <option value="10000-15000">LKR:10,000 - LKR:15,000</option>
+                    <option value="15000+">LKR:15,000+</option>
                   </select>
                 </div>
                 
@@ -145,7 +145,7 @@ const HomePage = () => {
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Why Choose <span className="text-amber-400">BoardingHouse</span></h2>
+              <h2 className="text-3xl font-bold mb-4">Why Choose <span className="text-amber-400">StayMate</span></h2>
               <p className="text-gray-300 max-w-2xl mx-auto">
                 We're dedicated to helping you find the perfect accommodation that fits your needs and budget.
               </p>
@@ -223,9 +223,9 @@ const HomePage = () => {
                   <h3 className="text-lg font-semibold mb-2">Student Boarding House</h3>
                   <div className="flex items-center text-gray-400 mb-3">
                     <FaMapMarkerAlt className="mr-1" />
-                    <span className="text-sm">Manila, Philippines</span>
+                    <span className="text-sm">Bambalapitiya, Sri Lanka</span>
                   </div>
-                  <p className="text-amber-400 font-semibold mb-4">From ₱5,000 / month</p>
+                  <p className="text-amber-400 font-semibold mb-4">From LKR:15,000 / month</p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">4 available rooms</span>
                     <Link 
@@ -255,9 +255,9 @@ const HomePage = () => {
                   <h3 className="text-lg font-semibold mb-2">Urban Dormitory</h3>
                   <div className="flex items-center text-gray-400 mb-3">
                     <FaMapMarkerAlt className="mr-1" />
-                    <span className="text-sm">Quezon City, Philippines</span>
+                    <span className="text-sm">Malabe, Sri Lanka</span>
                   </div>
-                  <p className="text-amber-400 font-semibold mb-4">From ₱7,500 / month</p>
+                  <p className="text-amber-400 font-semibold mb-4">From LKR:12,500 / month</p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">2 available rooms</span>
                     <Link 
@@ -287,9 +287,9 @@ const HomePage = () => {
                   <h3 className="text-lg font-semibold mb-2">Professionals Residence</h3>
                   <div className="flex items-center text-gray-400 mb-3">
                     <FaMapMarkerAlt className="mr-1" />
-                    <span className="text-sm">Makati, Philippines</span>
+                    <span className="text-sm">Colombo 5, Sri Lanka</span>
                   </div>
-                  <p className="text-amber-400 font-semibold mb-4">From ₱10,000 / month</p>
+                  <p className="text-amber-400 font-semibold mb-4">From LKR:10,000 / month</p>
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-400">6 available rooms</span>
                     <Link 

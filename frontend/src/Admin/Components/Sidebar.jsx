@@ -4,8 +4,9 @@ import {
   FaHome, FaBuilding, FaClipboardList, FaMoneyBillWave, 
   FaArrowCircleLeft, FaArrowCircleRight, FaChartBar, FaSignOutAlt, 
   FaExchangeAlt, FaDoorOpen, FaClock, FaComment, FaUtensils, FaShoppingCart,
-  FaUsers
+  FaUsers, FaBolt, FaFileInvoiceDollar
 } from 'react-icons/fa';
+
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -31,7 +32,11 @@ const Sidebar = () => {
     { name: 'Tenant Feedback', icon: <FaComment />, path: '/admin/feedback' },
     { name: 'Meals', icon: <FaUtensils />, path: '/admin/meals' }, // Added Meals
     { name: 'Orders', icon: <FaShoppingCart />, path: '/admin/orders' }, // Added Orders
-    { name: 'Users', icon: <FaUsers />, path: '/admin/users' } // Added Users
+    { name: 'Users', icon: <FaUsers />, path: '/admin/users' },// Added Users
+    { name: "Rent Payments",    icon: <FaMoneyBillWave />,  path: "/admin/payments" },
+    { name: "Utility Payments", icon: <FaBolt />,           path: "/admin/utilities" }, 
+    { name: "Meal Payments",    icon: <FaMoneyBillWave />,  path: "/admin/meal-payments" },
+    { name: "Finance Reports",  icon: <FaFileInvoiceDollar />, path: "/admin/finance-reports" },
   ];
   
   return (
