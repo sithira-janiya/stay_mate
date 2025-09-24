@@ -1,5 +1,26 @@
-import { useEffect, useState } from "react";
-import { getInvoices } from "../../../services/rentApi";
+// frontend/src/Admin/Pages/Payments/RentInvoicesTab.jsx
+import { useEffect, useMemo, useState } from "react";
+import { getInvoices, deleteInvoice } from "../../../services/rentApi";
+
+const fmtDate = (val) => {
+  if (!val) return "-";
+  const d = new Date(val);
+  return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString();
+};
+
+const Badge = ({ kind, children }) => {
+  const cls =
+    kind === "paid"
+      ? "bg-green-600 text-white"
+      : kind === "overdue"
+      ? "bg-yellow-500 text-black"
+      : "bg-red-600 text-white"; // unpaid
+  return (
+    <span className={`px-2 py-1 rounded text-xs font-semibold ${cls}`}>
+      {children}
+    </span>
+  );
+};
 
 export default function InvoicesTab() {
   const [filters, setFilters] = useState({
@@ -7,39 +28,80 @@ export default function InvoicesTab() {
     propertyId: "",
     tenantId: "",
   });
+  const [statusFilter, setStatusFilter] = useState(""); // "", "paid", "unpaid", "overdue"
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [msg, setMsg] = useState("");
+  const [deletingId, setDeletingId] = useState(null);
 
   async function load() {
     setErr("");
+    setMsg("");
     setLoading(true);
     try {
-      const data = await getInvoices(filters);
+      const data = await getInvoices({
+        month: filters.month || undefined,
+        propertyId: filters.propertyId?.trim() || undefined,
+        tenantId: filters.tenantId?.trim() || undefined,
+      });
       setRows(Array.isArray(data) ? data : []);
     } catch (e) {
       setErr(e.message || "Failed to fetch invoices");
+      setRows([]);
     } finally {
       setLoading(false);
     }
   }
 
-  // Load on mount
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Submit handler so pressing Enter in Tenant ID works
   function handleSearch(e) {
     e.preventDefault();
     load();
   }
 
+  const withDerived = useMemo(() => {
+    const todayMid = new Date();
+    todayMid.setHours(0, 0, 0, 0);
+    return rows.map((inv) => {
+      const paid = String(inv.status).toLowerCase() === "paid";
+      const due = inv.dueDate ? new Date(inv.dueDate) : null;
+      const overdue = !paid && due && due < todayMid;
+      const derivedStatus = paid ? "paid" : overdue ? "overdue" : "unpaid";
+      return { ...inv, derivedStatus };
+    });
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    if (!statusFilter) return withDerived;
+    return withDerived.filter((r) => r.derivedStatus === statusFilter);
+  }, [withDerived, statusFilter]);
+
+  async function onDelete(id) {
+    if (!id) return;
+    if (!window.confirm("Delete this invoice? This cannot be undone.")) return;
+    try {
+      setDeletingId(id);
+      setErr("");
+      setMsg("");
+      await deleteInvoice(id);
+      setMsg("Invoice deleted.");
+      setRows((rs) => rs.filter((r) => r._id !== id));
+    } catch (e) {
+      setErr(e.message || "Failed to delete invoice");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <form onSubmit={handleSearch} className="card grid gap-3 md:grid-cols-4">
+      <form onSubmit={handleSearch} className="card grid gap-3 md:grid-cols-5">
         <div>
           <div className="text-sm text-gray-300 mb-1">Month</div>
           <input
@@ -51,28 +113,45 @@ export default function InvoicesTab() {
             }
           />
         </div>
+
         <div>
           <div className="text-sm text-gray-300 mb-1">Property ID (optional)</div>
           <input
             className="inp"
-            placeholder="e.g. PROP-1001"
+            placeholder="Mongo _id or code"
             value={filters.propertyId}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, propertyId: e.target.value.trim() }))
+              setFilters((f) => ({ ...f, propertyId: e.target.value }))
             }
           />
         </div>
+
         <div>
           <div className="text-sm text-gray-300 mb-1">Tenant ID</div>
           <input
             className="inp"
-            placeholder="e.g. TEN-001"
+            placeholder="tenant string id"
             value={filters.tenantId}
             onChange={(e) =>
-              setFilters((f) => ({ ...f, tenantId: e.target.value.trim() }))
+              setFilters((f) => ({ ...f, tenantId: e.target.value }))
             }
           />
         </div>
+
+        <div>
+          <div className="text-sm text-gray-300 mb-1">Status</div>
+          <select
+            className="select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">All</option>
+            <option value="paid">Paid</option>
+            <option value="unpaid">Unpaid</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+
         <div className="flex items-end">
           <button
             type="submit"
@@ -85,6 +164,7 @@ export default function InvoicesTab() {
       </form>
 
       {err && <div className="card-tight text-red-400">{err}</div>}
+      {msg && <div className="card-tight text-green-400">{msg}</div>}
 
       {/* Table */}
       <div className="table-wrap">
@@ -102,40 +182,47 @@ export default function InvoicesTab() {
               <th className="th">Total</th>
               <th className="th">Status</th>
               <th className="th">Due</th>
+              <th className="th">Action</th>
             </tr>
           </thead>
           <tbody>
-            {rows.length === 0 ? (
+            {filtered.length === 0 ? (
               <tr>
-                <td className="td text-gray-400" colSpan={11}>
-                  No invoices found
+                <td className="td text-gray-400" colSpan={12}>
+                  {loading ? "Loading…" : "No invoices found"}
                 </td>
               </tr>
             ) : (
-              rows.map((inv) => (
+              filtered.map((inv) => (
                 <tr key={inv._id}>
                   <td className="td">{inv.invoiceCode}</td>
                   <td className="td">{inv.month}</td>
                   <td className="td">{inv.tenantName || inv.tenantId}</td>
-                  <td className="td">{inv.propertyName || inv.propertyId}</td>
-                  <td className="td">{inv.roomNumber || inv.roomId}</td>
                   <td className="td">
-                    Rs. {Number(inv.baseRent || 0).toLocaleString()}
+                    {inv.propertyId?.name || inv.propertyName || String(inv.propertyId)}
                   </td>
                   <td className="td">
-                    Rs. {Number(inv.utilities || 0).toLocaleString()}
+                    {inv.roomId?.roomNo || inv.roomNumber || String(inv.roomId)}
                   </td>
+                  <td className="td">Rs. {Number(inv.baseRent || 0).toLocaleString()}</td>
+                  <td className="td">Rs. {Number(inv.utilityShare || 0).toLocaleString()}</td>
+                  <td className="td">Rs. {Number(inv.mealCost || 0).toLocaleString()}</td>
+                  <td className="td font-medium">Rs. {Number(inv.total || 0).toLocaleString()}</td>
                   <td className="td">
-                    Rs. {Number(inv.meals || 0).toLocaleString()}
+                    {inv.derivedStatus === "paid" && <Badge kind="paid">Paid</Badge>}
+                    {inv.derivedStatus === "overdue" && <Badge kind="overdue">Overdue</Badge>}
+                    {inv.derivedStatus === "unpaid" && <Badge kind="unpaid">Unpaid</Badge>}
                   </td>
-                  <td className="td font-medium">
-                    Rs. {Number(inv.total || 0).toLocaleString()}
-                  </td>
-                  <td className="td">{inv.status || "-"}</td>
+                  <td className="td">{fmtDate(inv.dueDate)}</td>
                   <td className="td">
-                    {inv.dueDate
-                      ? new Date(inv.dueDate).toLocaleDateString()
-                      : "-"}
+                    <button
+                      className="btn-red"
+                      onClick={() => onDelete(inv._id)}
+                      disabled={deletingId === inv._id}
+                      title="Delete invoice"
+                    >
+                      {deletingId === inv._id ? "Deleting…" : "Delete"}
+                    </button>
                   </td>
                 </tr>
               ))

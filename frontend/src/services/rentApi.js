@@ -1,3 +1,4 @@
+// frontend/src/services/rentApi.js
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 function buildUrl(path, params = {}) {
@@ -46,11 +47,11 @@ export async function getPayments({ month, propertyId, tenantId } = {}) {
   return fetchJson(buildUrl("/owner/rent/payments", { month, propertyId, tenantId }));
 }
 
-export async function generateInvoices({ month, dueDate }) {
+export async function generateInvoices({ month, dueDate, propertyId }) {
   return fetchJson(`${API_BASE}/owner/rent/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ month, dueDate }),
+    body: JSON.stringify({ month, dueDate, propertyId }), // <-- include propertyId
   });
 }
 
@@ -59,5 +60,12 @@ export async function createReceipt({ invoiceId, amountPaid, paymentMethod }) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ invoiceId, amountPaid, paymentMethod }),
+  });
+}
+
+// delete invoice by id
+export async function deleteInvoice(invoiceId) {
+  return fetchJson(`${API_BASE}/owner/rent/invoices/${invoiceId}`, {
+    method: "DELETE",
   });
 }
