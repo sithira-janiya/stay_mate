@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 
 const UtilityBillSchema = new mongoose.Schema(
   {
+    billCode:   { type: String, unique: true, index: true }, // e.g. UBW0001 / UBE0001
     propertyId: { type: mongoose.Schema.Types.ObjectId, ref: "Property", required: true },
     month:      { type: String, required: true, match: /^\d{4}-\d{2}$/ },
     type:       { type: String, enum: ["water", "electricity"], required: true },
