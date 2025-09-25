@@ -5,10 +5,8 @@ const Payment = require("../models/Payment");
 const { getNextCode } = require("../models/codeHelper");
 const { isValidMonth, ensureObjectId } = require("../utils/validators");
 
-// Teammates' models via ExternalModels (Room has property:ObjectId, occupants:[{_id:String}], price.amount)
-const { Room, Order } = require("../models/ExternalModels");
 
-// NEW: centralized rent calculation helpers (utilities + meals + totals)
+const { Room, Order } = require("../models/ExternalModels");
 const rentCalc = require("../services/rentCalc");
 
 // ---------- helpers ----------

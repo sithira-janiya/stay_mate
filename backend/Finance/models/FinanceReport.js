@@ -1,3 +1,4 @@
+//models/FinanceReport.js
 const mongoose = require('mongoose');
 
 const financeReportSchema = new mongoose.Schema(
