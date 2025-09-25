@@ -1,4 +1,4 @@
-//FinanceGenerateTab.jsx
+// frontend/src/Pages/Admin/Finance/FinanceGenerateTab.jsx
 import { useState } from "react";
 import { generateFinanceReport } from "../../../services/financeApi";
 
@@ -29,7 +29,7 @@ export default function FinanceGenerateTab() {
       {err && <div className="text-red-400">{err}</div>}
       {msg && <div className="text-green-400">{msg}</div>}
       <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-3">
-        <select name="reportType" className="select" required>
+        <select name="reportType" className="select" defaultValue="summary" required>
           <option value="rent">Rent</option>
           <option value="utilities">Utilities</option>
           <option value="meals">Meals</option>
@@ -37,7 +37,10 @@ export default function FinanceGenerateTab() {
         </select>
         <input name="month" type="month" className="inp" required />
         <input name="notes" className="inp md:col-span-2" placeholder="Notes (optional)" />
-        <button className="btn-amber md:col-span-2">Generate</button>
+        {/* GREEN GENERATE BUTTON */}
+        <button className="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white md:col-span-2">
+          Generate
+        </button>
       </form>
     </div>
   );

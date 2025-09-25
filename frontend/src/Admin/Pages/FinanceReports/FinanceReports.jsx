@@ -1,4 +1,4 @@
-//FinanceReports.jsx
+// frontend/src/Pages/Admin/Finance/FinanceReports.jsx
 import { NavLink, Outlet } from "react-router-dom";
 import { HiOutlineDocumentReport } from "react-icons/hi";
 

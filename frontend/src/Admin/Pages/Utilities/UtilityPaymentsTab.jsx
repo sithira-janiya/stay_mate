@@ -44,7 +44,11 @@ export default function PaymentsTab() {
     <div className="table-wrap">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-white font-semibold">Pending Utility Bills</h3>
-        <button className="btn-ghost" onClick={load} disabled={loading}>
+        <button
+          className="inline-flex items-center px-3 py-1.5 rounded-md bg-gray-700 text-gray-200 hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={load}
+          disabled={loading}
+        >
           {loading ? "Refreshing…" : "Refresh"}
         </button>
       </div>
@@ -78,9 +82,11 @@ export default function PaymentsTab() {
                 </td>
                 <td className="td">
                   <button
-                    className="btn-outline"
                     onClick={() => onPay(b._id)}
                     disabled={payingId === b._id}
+                    className="inline-flex items-center justify-center px-3 py-1.5 rounded-md font-medium
+                               bg-green-600 text-white hover:bg-green-700 transition-colors
+                               disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {payingId === b._id ? "Paying…" : "Mark as Paid"}
                   </button>

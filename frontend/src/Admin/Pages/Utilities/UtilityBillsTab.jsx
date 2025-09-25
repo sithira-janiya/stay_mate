@@ -26,7 +26,7 @@ export default function BillsTab() {
   const DUE_MIN = firstDayThisMonthISO();
 
   const [properties, setProperties] = useState([]);
-  const [loadingProps, setLoadingProps] = useState(true);
+  const [loadingProps, setLoadingProps] = useState(true); // <-- fixed
 
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
@@ -35,7 +35,7 @@ export default function BillsTab() {
   // local form state (for basic validation & UX)
   const [form, setForm] = useState({
     propertyId: "",
-    month: THIS_MONTH,          // default to this month
+    month: THIS_MONTH, // default to this month
     type: "water",
     amount: "",
     dueDate: "",
@@ -88,17 +88,16 @@ export default function BillsTab() {
     if (dueDateInvalid) return setErr(`Due date cannot be before ${DUE_MIN}.`);
 
     try {
-       setSubmitting(true);
-        await createUtilityBill({
-          propertyId: form.propertyId,
-          month: form.month,
-          type: form.type,
-          amount: Number(form.amount),
-          dueDate: form.dueDate,
-          notes: form.notes?.trim() || "",
-        });
-        setMsg("Utility bill created!");
-      
+      setSubmitting(true);
+      await createUtilityBill({
+        propertyId: form.propertyId,
+        month: form.month,
+        type: form.type,
+        amount: Number(form.amount),
+        dueDate: form.dueDate,
+        notes: form.notes?.trim() || "",
+      });
+      setMsg("Utility bill created!");
       // reset except property (so you can add multiple quickly)
       setForm((f) => ({
         ...f,
@@ -113,6 +112,19 @@ export default function BillsTab() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function onCancel() {
+    setErr("");
+    setMsg("");
+    setForm({
+      propertyId: "",
+      month: THIS_MONTH,
+      type: "water",
+      amount: "",
+      dueDate: "",
+      notes: "",
+    });
   }
 
   return (
@@ -142,8 +154,8 @@ export default function BillsTab() {
             <option value="">{loadingProps ? "Loading..." : "Select Property"}</option>
             {!loadingProps &&
               properties.map((p) => (
-                <option key={p._id} value={p._id}>
-                  {p.name} ({p.propertyId})
+                <option key={p._id || p.id} value={p._id || p.id}>
+                  {p.name} {p.propertyId ? `(${p.propertyId})` : ""}
                 </option>
               ))}
           </select>
@@ -210,9 +222,7 @@ export default function BillsTab() {
             required
             disabled={formDisabled}
           />
-          <span className="text-xs text-gray-400 mt-1">
-            Must be on/after {DUE_MIN}
-          </span>
+          <span className="text-xs text-gray-400 mt-1">Must be on/after {DUE_MIN}</span>
         </div>
 
         {/* Notes */}
@@ -227,9 +237,29 @@ export default function BillsTab() {
           />
         </div>
 
-        <div className="md:col-span-2">
-          <button className="btn-amber" disabled={formDisabled}>
+        {/* Actions */}
+        <div className="md:col-span-2 flex gap-3">
+          {/* Green submit */}
+          <button
+            type="submit"
+            disabled={formDisabled}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-md font-medium
+                       bg-green-600 text-white hover:bg-green-700 transition-colors
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {submitting ? "Creating…" : "Create Bill"}
+          </button>
+
+          {/* Red cancel */}
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={submitting}
+            className="inline-flex items-center justify-center px-4 py-2 rounded-md font-medium
+                       bg-red-600 text-white hover:bg-red-700 transition-colors
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
           </button>
         </div>
       </form>

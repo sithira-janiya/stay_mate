@@ -8,18 +8,13 @@ const fmtDate = (val) => {
   return Number.isNaN(d.getTime()) ? "-" : d.toLocaleDateString();
 };
 
-const Badge = ({ kind, children }) => {
-  const cls =
-    kind === "paid"
-      ? "bg-green-600 text-white"
-      : kind === "overdue"
-      ? "bg-yellow-500 text-black"
-      : "bg-red-600 text-white"; // unpaid
-  return (
-    <span className={`px-2 py-1 rounded text-xs font-semibold ${cls}`}>
-      {children}
-    </span>
-  );
+/** Faded status pill (Paid = green, Overdue = amber, Unpaid = red) */
+const StatusPill = ({ status }) => {
+  const s = String(status || "").toLowerCase(); // "paid" | "overdue" | "unpaid"
+  const base = "px-2 py-1 rounded text-xs font-semibold";
+  if (s === "paid")     return <span className={`${base} bg-green-600/20 text-green-300`}>Paid</span>;
+  if (s === "overdue")  return <span className={`${base} bg-amber-600/20 text-amber-300`}>Overdue</span>;
+  return <span className={`${base} bg-red-600/20 text-red-300`}>Unpaid</span>;
 };
 
 export default function InvoicesTab() {
@@ -209,17 +204,17 @@ export default function InvoicesTab() {
                   <td className="td">Rs. {Number(inv.mealCost || 0).toLocaleString()}</td>
                   <td className="td font-medium">Rs. {Number(inv.total || 0).toLocaleString()}</td>
                   <td className="td">
-                    {inv.derivedStatus === "paid" && <Badge kind="paid">Paid</Badge>}
-                    {inv.derivedStatus === "overdue" && <Badge kind="overdue">Overdue</Badge>}
-                    {inv.derivedStatus === "unpaid" && <Badge kind="unpaid">Unpaid</Badge>}
+                    <StatusPill status={inv.derivedStatus} />
                   </td>
                   <td className="td">{fmtDate(inv.dueDate)}</td>
                   <td className="td">
                     <button
-                      className="btn-red"
                       onClick={() => onDelete(inv._id)}
                       disabled={deletingId === inv._id}
                       title="Delete invoice"
+                      className={`px-3 py-1.5 rounded bg-red-600 hover:bg-red-700 text-white
+                                  focus:outline-none focus:ring-2 focus:ring-red-400/60
+                                  disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       {deletingId === inv._id ? "Deleting…" : "Delete"}
                     </button>
