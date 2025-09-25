@@ -13,7 +13,6 @@ const computeStatus = (inv) => {
   if (String(inv?.status || "").toLowerCase() === "paid") return "paid";
   const due = inv?.dueDate ? new Date(inv.dueDate) : null;
   if (due && !Number.isNaN(due.getTime())) {
-    // compare at midnight to avoid TZ edge cases
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dueMid = new Date(due.getFullYear(), due.getMonth(), due.getDate());
@@ -24,12 +23,17 @@ const computeStatus = (inv) => {
 
 const StatusBadge = ({ status }) => {
   const s = String(status || "").toLowerCase();
-  const base = "px-2 py-1 rounded text-xs font-medium";
+  const base =
+    "inline-block min-w-[76px] text-center px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap";
   if (s === "paid") return <span className={`${base} bg-green-600/20 text-green-300`}>Paid</span>;
   if (s === "overdue") return <span className={`${base} bg-red-600/20 text-red-300`}>Overdue</span>;
-  // pending
   return <span className={`${base} bg-amber-600/20 text-amber-300`}>Pending</span>;
 };
+
+// Keep one definition so header & rows always match.
+// Tweak widths if you want more/less space per column.
+const COLS =
+  "grid grid-cols-[140px_110px_160px_260px_140px_110px_100px_100px_120px_130px_115px_140px_120px] gap-x-4 items-center";
 
 export default function UnpaidInvoicesTab() {
   const [filters, setFilters] = useState({
@@ -91,7 +95,7 @@ export default function UnpaidInvoicesTab() {
       const method = methods[inv._id] || "Cash";
       await createReceipt({
         invoiceId: inv._id,
-        amountPaid: inv.total, // full payment required by backend
+        amountPaid: inv.total,
         paymentMethod: method,
       });
       setMsg(`Invoice ${inv.invoiceCode || inv._id} marked as paid.`);
@@ -151,71 +155,89 @@ export default function UnpaidInvoicesTab() {
       {err && <div className="card-tight text-red-400">{err}</div>}
       {msg && <div className="card-tight text-green-400">{msg}</div>}
 
-      {/* Table */}
-      <div className="table-wrap">
-        <table className="admin">
-          <thead>
-            <tr>
-              <th className="th">Code</th>
-              <th className="th">Month</th>
-              <th className="th">Tenant</th>
-              <th className="th">Property</th>
-              <th className="th">Room</th>
-              <th className="th">Base</th>
-              <th className="th">Utilities</th>
-              <th className="th">Meals</th>
-              <th className="th">Total</th>
-              <th className="th">Due</th>
-              <th className="th">Status</th>
-              <th className="th">Method</th>
-              <th className="th">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0 ? (
-              <tr>
-                <td className="td text-gray-400" colSpan={13}>
-                  {loading
-                    ? "Loading…"
-                    : hasFilters
-                    ? "No unpaid invoices found"
-                    : "No unpaid invoices"}
-                </td>
-              </tr>
-            ) : (
-              rows.map((inv) => {
+      {/* Grid "table" wrapped in a single card so edges/padding align */}
+      <div className="card p-0 overflow-x-auto">
+        {/* This inner wrapper sets consistent horizontal padding for header+rows
+            and establishes a minimum width so columns don't collapse. */}
+        <div className="min-w-[1200px] px-4 sm:px-6">
+          {/* Header */}
+          <div className={`${COLS} text-sm text-gray-300 py-3 border-b border-gray-700/60`}>
+            <div>Code</div>
+            <div>Month</div>
+            <div>Tenant</div>
+            <div>Property</div>
+            <div>Room</div>
+            <div className="text-right">Base</div>
+            <div className="text-right">Utilities</div>
+            <div className="text-right">Meals</div>
+            <div className="text-right">Total</div>
+            <div>Due</div>
+            <div>Status</div>
+            <div>Method</div>
+            <div>Action</div>
+          </div>
+
+          {/* Rows */}
+          {rows.length === 0 ? (
+            <div className="text-gray-400 py-6 text-center">
+              {loading
+                ? "Loading…"
+                : hasFilters
+                ? "No unpaid invoices found"
+                : "No unpaid invoices"}
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-700/50">
+              {rows.map((inv) => {
                 const status = inv._derivedStatus || inv.status || "pending";
                 const payingThis = payingId === inv._id;
                 const btnClass = payingThis ? "btn-green" : "btn-amber";
                 const btnLabel = payingThis ? "Paid!" : "Mark as Paid";
 
+                const propertyText =
+                  inv?.propertyId?.name || inv?.propertyName || String(inv?.propertyId || "");
+                const roomText =
+                  inv?.roomId?.roomNo || inv?.roomNumber || String(inv?.roomId || "");
+
                 return (
-                  <tr key={inv._id}>
-                    <td className="td">{inv.invoiceCode || inv._id}</td>
-                    <td className="td">{inv.month}</td>
-                    <td className="td">{inv.tenantName || inv.tenantId}</td>
+                  <div key={inv._id} className={`${COLS} py-3`}>
+                    <div className="truncate" title={inv.invoiceCode || inv._id}>
+                      {inv.invoiceCode || inv._id}
+                    </div>
+                    <div className="truncate" title={inv.month}>
+                      {inv.month}
+                    </div>
+                    <div className="truncate" title={inv.tenantName || inv.tenantId}>
+                      {inv.tenantName || inv.tenantId}
+                    </div>
+                    <div className="truncate" title={propertyText}>
+                      {propertyText}
+                    </div>
+                    <div className="truncate" title={roomText}>
+                      {roomText}
+                    </div>
 
-                    {/* IMPORTANT: coerce to string when not populated */}
-                    <td className="td">
-                      {inv.propertyId?.name || inv.propertyName || String(inv.propertyId || "")}
-                    </td>
-                    <td className="td">
-                      {inv.roomId?.roomNo || inv.roomNumber || String(inv.roomId || "")}
-                    </td>
+                    <div className="text-right whitespace-nowrap">
+                      Rs. {Number(inv.baseRent || 0).toLocaleString()}
+                    </div>
+                    <div className="text-right whitespace-nowrap">
+                      Rs. {Number(inv.utilityShare || 0).toLocaleString()}
+                    </div>
+                    <div className="text-right whitespace-nowrap">
+                      Rs. {Number(inv.mealCost || 0).toLocaleString()}
+                    </div>
+                    <div className="text-right font-medium whitespace-nowrap pr-2">
+                      Rs. {Number(inv.total || 0).toLocaleString()}
+                    </div>
 
-                    <td className="td">Rs. {Number(inv.baseRent || 0).toLocaleString()}</td>
-                    <td className="td">Rs. {Number(inv.utilityShare || 0).toLocaleString()}</td>
-                    <td className="td">Rs. {Number(inv.mealCost || 0).toLocaleString()}</td>
-                    <td className="td font-medium">Rs. {Number(inv.total || 0).toLocaleString()}</td>
-
-                    <td className="td">{fmtDate(inv.dueDate)}</td>
-                    <td className="td">
+                    <div className="whitespace-nowrap">{fmtDate(inv.dueDate)}</div>
+                    <div>
                       <StatusBadge status={status} />
-                    </td>
+                    </div>
 
-                    <td className="td">
+                    <div>
                       <select
-                        className="select"
+                        className="select h-8 text-xs w-[130px]"
                         value={methods[inv._id] || "Cash"}
                         onChange={(e) => setMethods((m) => ({ ...m, [inv._id]: e.target.value }))}
                         disabled={payingThis}
@@ -225,19 +247,23 @@ export default function UnpaidInvoicesTab() {
                         <option>Card</option>
                         <option>Online</option>
                       </select>
-                    </td>
+                    </div>
 
-                    <td className="td">
-                      <button className={btnClass} onClick={() => onMarkPaid(inv)} disabled={payingThis}>
+                    <div>
+                      <button
+                        className={`${btnClass} h-8 px-3 text-xs w-[110px]`}
+                        onClick={() => onMarkPaid(inv)}
+                        disabled={payingThis}
+                      >
                         {btnLabel}
                       </button>
-                    </td>
-                  </tr>
+                    </div>
+                  </div>
                 );
-              })
-            )}
-          </tbody>
-        </table>
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

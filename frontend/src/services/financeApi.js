@@ -1,4 +1,4 @@
-//financeApi.js
+// frontend/src/services/financeApi.js
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 function buildUrl(path, params = {}) {
@@ -39,11 +39,11 @@ async function fetchJson(input, init = {}, timeoutMs = 15000) {
   }
 }
 
-export async function getFinanceReports({ type, month } = {}) {
-  return fetchJson(buildUrl("/finance-reports", { type, month }));
+export async function getFinanceReports({ reportType, month } = {}) {
+  return fetchJson(buildUrl("/finance-reports", { reportType, month }));
 }
 
-export async function generateFinanceReport({ reportType, month, notes }) {
+export async function generateFinanceReport({ reportType = "summary", month, notes }) {
   return fetchJson(`${API_BASE}/finance-reports/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -51,11 +51,7 @@ export async function generateFinanceReport({ reportType, month, notes }) {
   });
 }
 
-export async function getFinanceReport(reportId) {
-  return fetchJson(`${API_BASE}/finance-reports/${reportId}`);
-}
-
-// Example placeholder if you later add export endpoint
-export async function exportFinanceReport({ reportId, format = "pdf" }) {
-  return fetchJson(buildUrl(`/owner/finance/finance-reports/${reportId}/export`, { format }));
+// Accept code or ObjectId
+export async function getFinanceReport(idOrCode) {
+  return fetchJson(`${API_BASE}/finance-reports/${idOrCode}`);
 }
