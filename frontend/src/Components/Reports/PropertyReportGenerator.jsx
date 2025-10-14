@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { FaFilePdf, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
+import logo from "../../assets/staymate-logo.png"; // ✅ adjust path if needed
 
 // Base API URL
 const API_URL = 'http://localhost:5000/api';
@@ -17,6 +18,25 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f8f9fa',
     borderRadius: 5,
+    position: 'relative',
+  },
+  // 🖼️ Make the main cover page logo bigger
+  logo: {
+  width: 200,           // make logo visibly larger
+  height: 80,           // adjust height to match its proportions
+  alignSelf: 'center',
+  marginBottom: 10,
+  objectFit: 'contain', // prevents distortion
+  transform: 'scale(2.2)', // 🔥 scale up the image visually
+},
+
+  // 🖼️ Make the small logo slightly larger for other pages
+  logoSmall: {
+    width: 55, // ⬆️ from 40 → 55
+    height: 55, // ⬆️ from 40 → 55
+    position: 'absolute',
+    left: 10,
+    top: 10,
   },
   title: {
     fontSize: 20,
@@ -31,6 +51,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#374151',
   },
+
   section: {
     margin: 10,
     padding: 10,
@@ -141,8 +162,9 @@ const ComprehensivePropertyReport = ({ data }) => (
   <Document>
     {/* Cover Page */}
     <Page size="A4" style={styles.page}>
-      <View style={[styles.header, { height: 200, justifyContent: 'center' }]}>
-        <Text style={[styles.title, { fontSize: 24 }]}>Boarding House System</Text>
+      <View style={[styles.header, { height: 200, justifyContent: 'center', alignItems: 'center' }]}>
+        <Image src={logo} style={styles.logo} />
+        <Text style={[styles.title, { fontSize: 24 }]}>StayMate</Text>
         <Text style={[styles.subtitle, { fontSize: 16, marginTop: 10 }]}>
           Property and Room Report
         </Text>
@@ -158,11 +180,11 @@ const ComprehensivePropertyReport = ({ data }) => (
           Total Rooms: {data.properties.reduce((sum, property) => sum + (property.rooms?.length || 0), 0)}
         </Text>
         <Text style={styles.propertyDetail}>
-          Occupied Rooms: {data.properties.reduce((sum, property) => 
+          Occupied Rooms: {data.properties.reduce((sum, property) =>
             sum + (property.rooms?.filter(room => room.status === 'full').length || 0), 0)}
         </Text>
         <Text style={styles.propertyDetail}>
-          Available Rooms: {data.properties.reduce((sum, property) => 
+          Available Rooms: {data.properties.reduce((sum, property) =>
             sum + (property.rooms?.filter(room => room.status === 'vacant' || room.status === 'available').length || 0), 0)}
         </Text>
       </View>
@@ -176,6 +198,7 @@ const ComprehensivePropertyReport = ({ data }) => (
     {data.properties.map((property, propertyIndex) => (
       <Page key={`property-${propertyIndex}`} size="A4" style={styles.page}>
         <View style={styles.header}>
+          <Image src={logo} style={styles.logoSmall} />
           <Text style={styles.title}>{property.name}</Text>
           <Text style={styles.subtitle}>Property ID: {property.id}</Text>
           <Text style={styles.subtitle}>{property.address}</Text>
@@ -258,6 +281,7 @@ const ComprehensivePropertyReport = ({ data }) => (
     {/* Rooms Details Page */}
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
+        <Image src={logo} style={styles.logoSmall} />
         <Text style={styles.title}>Room Details</Text>
         <Text style={styles.subtitle}>Comprehensive Room Information</Text>
       </View>

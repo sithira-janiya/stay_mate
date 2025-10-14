@@ -1,6 +1,7 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Image } from '@react-pdf/renderer';
 import { FaFilePdf, FaSpinner } from 'react-icons/fa';
+import logo from "../../assets/staymate-logo.png";  // ✅ correct import
 
 // Create styles
 const styles = StyleSheet.create({
@@ -13,6 +14,15 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: '#f8f9fa',
     borderRadius: 5,
+    alignItems: 'center',
+  },
+ logo: {
+  width: 200,           // make logo visibly larger
+  height: 80,           // adjust height to match its proportions
+  alignSelf: 'center',
+  marginBottom: 10,
+  objectFit: 'contain', // prevents distortion
+  transform: 'scale(1.8)',
   },
   title: {
     fontSize: 20,
@@ -89,13 +99,15 @@ const AttendanceReport = ({ data, dateRange }) => (
   <Document>
     {/* Cover Page */}
     <Page size="A4" style={styles.page}>
-      <View style={[styles.header, { height: 200, justifyContent: 'center' }]}>
-        <Text style={[styles.title, { fontSize: 24 }]}>Boarding House System</Text>
+      <View style={[styles.header, { height: 250, justifyContent: 'center' }]}>
+        <Image src={logo} style={styles.logo} />
+        <Text style={[styles.title, { fontSize: 24 }]}>StayMate</Text>
         <Text style={[styles.subtitle, { fontSize: 16, marginTop: 10 }]}>
           Tenant Attendance Report
         </Text>
         <Text style={[styles.subtitle, { marginTop: 30 }]}>
-          Period: {new Date(dateRange.startDate).toLocaleDateString()} - {new Date(dateRange.endDate).toLocaleDateString()}
+          Period: {new Date(dateRange.startDate).toLocaleDateString()} -{' '}
+          {new Date(dateRange.endDate).toLocaleDateString()}
         </Text>
         <Text style={[styles.subtitle, { marginTop: 10 }]}>
           Generated on: {new Date().toLocaleDateString()}
@@ -127,15 +139,17 @@ const AttendanceReport = ({ data, dateRange }) => (
     {/* Attendance Data Page */}
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
+        <Image src={logo} style={styles.logo} />
         <Text style={styles.title}>Tenant Attendance Details</Text>
         <Text style={styles.subtitle}>
-          Period: {new Date(dateRange.startDate).toLocaleDateString()} - {new Date(dateRange.endDate).toLocaleDateString()}
+          Period: {new Date(dateRange.startDate).toLocaleDateString()} -{' '}
+          {new Date(dateRange.endDate).toLocaleDateString()}
         </Text>
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Attendance Records</Text>
-        
+
         <View style={[styles.tableRow, styles.tableHeader]}>
           <Text style={styles.tenantCell}>Tenant ID</Text>
           <Text style={styles.tableCell}>Present Days</Text>
@@ -144,7 +158,7 @@ const AttendanceReport = ({ data, dateRange }) => (
           <Text style={styles.tableCell}>Total Hours</Text>
           <Text style={styles.tableCell}>Extra Hours</Text>
         </View>
-        
+
         {data.map((item, i) => (
           <View key={i} style={styles.tableRow}>
             <Text style={styles.tenantCell}>{item.tenantId}</Text>
@@ -175,7 +189,10 @@ const AttendanceReportButton = ({ attendanceData, dateRange, className }) => {
     <PDFDownloadLink
       document={<AttendanceReport data={attendanceData} dateRange={dateRange} />}
       fileName={`attendance-report-${dateRange.startDate}-to-${dateRange.endDate}.pdf`}
-      className={className || "bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded flex items-center justify-center transition-colors"}
+      className={
+        className ||
+        'bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded flex items-center justify-center transition-colors'
+      }
     >
       {({ blob, url, loading, error }) =>
         loading ? (

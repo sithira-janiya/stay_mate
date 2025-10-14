@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import {
+  PDFDownloadLink,
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image
+} from '@react-pdf/renderer';
 import { FaFileDownload, FaSpinner, FaChartBar } from 'react-icons/fa';
 import axios from 'axios';
 
@@ -14,7 +22,16 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     padding: 10,
     backgroundColor: '#f8f9fa',
-    borderRadius: 5
+    borderRadius: 5,
+    alignItems: 'center'
+  },
+  logo: {
+  width: 200,           // make logo visibly larger
+  height: 80,           // adjust height to match its proportions
+  alignSelf: 'center',
+  marginBottom: 10,
+  objectFit: 'contain', // prevents distortion
+  transform: 'scale(1.8)',
   },
   title: {
     fontSize: 20,
@@ -70,7 +87,13 @@ const MyDocument = ({ data, reportType, dateRange }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       <View style={styles.header}>
-        <Text style={styles.title}>Boarding House System</Text>
+        {/* Add Logo */}
+        <Image
+          src="/src/assets/staymate-logo.png"
+          style={styles.logo}
+        />
+
+        <Text style={styles.title}>StayMate</Text>
         <Text style={styles.subtitle}>
           {reportType === 'orders' ? 'Order Report' : 'Meals Report'}
         </Text>
@@ -99,7 +122,6 @@ const MyDocument = ({ data, reportType, dateRange }) => (
 
 // Orders Report Component
 const OrdersReport = ({ orders }) => {
-  // Group orders by status
   const ordersByStatus = orders.reduce((acc, order) => {
     const status = order.status;
     if (!acc[status]) acc[status] = [];
@@ -107,7 +129,6 @@ const OrdersReport = ({ orders }) => {
     return acc;
   }, {});
 
-  // Calculate total revenue
   const totalRevenue = orders.reduce((sum, order) => {
     return sum + (order.status === 'DELIVERED' ? order.totalCents : 0);
   }, 0);
@@ -118,7 +139,6 @@ const OrdersReport = ({ orders }) => {
         <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Order Summary</Text>
         <Text style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>Total Orders: {orders.length}</Text>
         <Text style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>Total Revenue: LKR {(totalRevenue / 100).toFixed(2)}</Text>
-        
         {Object.entries(ordersByStatus).map(([status, statusOrders]) => (
           <Text key={status} style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>
             {status}: {statusOrders.length} orders
@@ -128,7 +148,6 @@ const OrdersReport = ({ orders }) => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Recent Orders</Text>
-        
         <View style={[styles.itemContainer, styles.bold]}>
           <Text style={[styles.item, { flex: 2 }]}>Order ID</Text>
           <Text style={styles.item}>Customer</Text>
@@ -136,16 +155,13 @@ const OrdersReport = ({ orders }) => {
           <Text style={styles.item}>Status</Text>
           <Text style={styles.item}>Amount</Text>
         </View>
-
         {orders.slice(0, 20).map((order) => (
           <View key={order._id} style={styles.itemContainer}>
             <Text style={[styles.item, { flex: 2 }]}>
               {order.orderId ? order.orderId : `#${order._id.substring(order._id.length - 6)}`}
             </Text>
             <Text style={styles.item}>{order.contactName}</Text>
-            <Text style={styles.item}>
-              {new Date(order.createdAt).toLocaleDateString()}
-            </Text>
+            <Text style={styles.item}>{new Date(order.createdAt).toLocaleDateString()}</Text>
             <Text style={styles.item}>{order.status}</Text>
             <Text style={styles.item}>LKR {(order.totalCents / 100).toFixed(2)}</Text>
           </View>
@@ -157,7 +173,6 @@ const OrdersReport = ({ orders }) => {
 
 // Meals Report Component
 const MealsReport = ({ meals }) => {
-  // Group meals by type
   const mealsByType = meals.reduce((acc, meal) => {
     const type = meal.mealType;
     if (!acc[type]) acc[type] = [];
@@ -170,7 +185,6 @@ const MealsReport = ({ meals }) => {
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Meal Summary</Text>
         <Text style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>Total Meals: {meals.length}</Text>
-        
         {Object.entries(mealsByType).map(([type, typeMeals]) => (
           <Text key={type} style={{ fontSize: 10, color: '#374151', marginBottom: 4 }}>
             {type}: {typeMeals.length} meals
@@ -180,14 +194,12 @@ const MealsReport = ({ meals }) => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Meal List</Text>
-        
         <View style={[styles.itemContainer, styles.bold]}>
           <Text style={[styles.item, { flex: 2 }]}>Name</Text>
           <Text style={styles.item}>Type</Text>
           <Text style={styles.item}>Rating</Text>
           <Text style={styles.item}>Status</Text>
         </View>
-
         {meals.map((meal) => (
           <View key={meal._id} style={styles.itemContainer}>
             <Text style={[styles.item, { flex: 2 }]}>{meal.name}</Text>
@@ -204,7 +216,6 @@ const MealsReport = ({ meals }) => {
 // Main component
 const ReportGenerator = () => {
   const API_URL = 'http://localhost:5000/api';
-  
   const [reportType, setReportType] = useState('orders');
   const [dateRange, setDateRange] = useState({
     from: new Date().toISOString().split('T')[0],
@@ -218,37 +229,24 @@ const ReportGenerator = () => {
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
-
-    // Clamp to today (no future dates)
     const valueClamped = value > todayStr ? todayStr : value;
-
-    if (name === "from") {
-      // If new start date is after current end date, push end date up to start date
+    if (name === 'from') {
       const nextFrom = valueClamped;
       const nextTo = dateRange.to < nextFrom ? nextFrom : dateRange.to;
-      setDateRange({
-        from: nextFrom,
-        to: nextTo,
-      });
-    } else if (name === "to") {
-      // End date can't be before start date, can't be in the future
+      setDateRange({ from: nextFrom, to: nextTo });
+    } else if (name === 'to') {
       const nextTo = valueClamped < dateRange.from ? dateRange.from : valueClamped;
-      setDateRange({
-        ...dateRange,
-        to: nextTo,
-      });
+      setDateRange({ ...dateRange, to: nextTo });
     }
   };
 
   const fetchReportData = async () => {
     setLoading(true);
     setError(null);
-    
     try {
       let url = `${API_URL}/${reportType}?`;
       if (dateRange.from) url += `fromDate=${dateRange.from}&`;
       if (dateRange.to) url += `toDate=${dateRange.to}`;
-      
       const response = await axios.get(url);
       setReportData(response.data.data[reportType]);
     } catch (err) {
@@ -284,7 +282,7 @@ const ReportGenerator = () => {
             <option value="meals">Meals Report</option>
           </select>
         </div>
-        
+
         <div>
           <label className="block mb-2 font-medium">From Date</label>
           <input
@@ -296,7 +294,7 @@ const ReportGenerator = () => {
             max={todayStr}
           />
         </div>
-        
+
         <div>
           <label className="block mb-2 font-medium">To Date</label>
           <input
@@ -331,7 +329,7 @@ const ReportGenerator = () => {
             fileName={`${reportType}-report-${new Date().toISOString().slice(0, 10)}.pdf`}
             className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md flex items-center"
           >
-            {({ blob, url, loading, error }) =>
+            {({ loading }) =>
               loading ? (
                 <>
                   <FaSpinner className="animate-spin mr-2" />
