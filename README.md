@@ -94,5 +94,5 @@ The project follows a **modular, role-based, and scalable architecture**, design
   - Room & Property Management  
   - Financial Management  
 
----
+
 
